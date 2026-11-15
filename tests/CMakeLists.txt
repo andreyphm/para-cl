@@ -3,11 +3,7 @@ foreach(test_target IN ITEMS ast_tests runtime_context_tests)
     target_include_directories(${test_target} PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_link_libraries(${test_target} PRIVATE GTest::gtest_main)
 
-    if(MSVC)
-        target_compile_options(${test_target} PRIVATE /W4 /permissive-)
-    else()
-        target_compile_options(${test_target} PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
+    para_cl_enable_warnings(${test_target})
 
     gtest_discover_tests(${test_target})
 endforeach()

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
+include(cmake/warnings.cmake)
 
 if(BUILD_TESTING)
     include(FetchContent)
@@ -24,9 +25,4 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(para_cl source/main.cpp)
-
-if(MSVC)
-    target_compile_options(para_cl PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(para_cl PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+para_cl_enable_warnings(para_cl)
