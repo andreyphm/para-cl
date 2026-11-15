@@ -3,6 +3,9 @@
 #include <memory>
 #include <utility>
 #include <stdexcept>
+#include <string>
+
+#include "runtime_context.hpp"
 
 namespace ParaCL {
 
@@ -20,14 +23,14 @@ enum class UnaryOperator {
 
 class Expression {
 public:
-    virtual int evaluate() const = 0;
+    virtual int evaluate(RuntimeContext&) const = 0;
     virtual ~Expression() = default;
 };
 
 class NumberExpression : public Expression {
 public:
     explicit NumberExpression(int value) : value_(value) {}
-    int evaluate() const override { return value_; }
+    int evaluate(RuntimeContext&) const override { return value_; }
 
 private:
     int value_;
@@ -42,9 +45,9 @@ public:
         }
     }
 
-    int evaluate() const override {
-        const int left_value = left_->evaluate();
-        const int right_value = right_->evaluate();
+    int evaluate(RuntimeContext& context) const override {
+        const int left_value = left_->evaluate(context);
+        const int right_value = right_->evaluate(context);
 
         switch (operation_) {
             case BinaryOperator::Add: return left_value + right_value;
@@ -75,10 +78,10 @@ public:
         }
     }
 
-    int evaluate() const override {
+    int evaluate(RuntimeContext& context) const override {
         switch (operation_) {
-            case UnaryOperator::Plus:  return operand_->evaluate();
-            case UnaryOperator::Minus: return -operand_->evaluate();
+            case UnaryOperator::Plus:  return operand_->evaluate(context);
+            case UnaryOperator::Minus: return -operand_->evaluate(context);
         }
 
         throw std::logic_error("Unknown unary operator");
@@ -87,6 +90,18 @@ public:
 private:
     UnaryOperator operation_;
     std::unique_ptr<Expression> operand_;
+};
+
+class VariableExpression : public Expression {
+public:
+    explicit VariableExpression(std::string name) : name_(std::move(name)) {}
+
+    int evaluate(RuntimeContext& context) const override {
+        return context.get_variable(name_);
+    }
+
+private:
+    std::string name_;
 };
 
 } // namespace ParaCL
