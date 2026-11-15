@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <istream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -12,6 +13,10 @@ namespace ParaCL {
 
 class RuntimeContext {
 public:
+    std::istream& input;
+
+    explicit RuntimeContext(std::istream& stream) : input(stream) {}
+
     int get_variable(const std::string& name) const {
         const int* variable_value = find_variable_value(name);
         if (!variable_value) {
