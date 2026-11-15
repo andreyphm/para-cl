@@ -133,4 +133,24 @@ public:
     }
 };
 
+class AssignmentExpression : public Expression {
+public:
+    AssignmentExpression(std::string name, std::unique_ptr<Expression> expression)
+                        : name_(std::move(name)), expression_(std::move(expression)) {
+        if (!expression_) {
+            throw std::invalid_argument("Assignment expression must not be null");
+        }
+    }
+
+    int evaluate(RuntimeContext& context) const override {
+        const int value = expression_->evaluate(context);
+        context.set_variable(name_, value);
+        return value;
+    }
+
+private:
+    std::string name_;
+    std::unique_ptr<Expression> expression_;
+};
+
 } // namespace ParaCL

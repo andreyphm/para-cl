@@ -336,6 +336,140 @@ TEST(VariableExpressionTest, ReportsUnknownName) {
     EXPECT_THROW(expression.evaluate(context), std::runtime_error);
 }
 
+TEST(AssignmentExpressionTest, CreatesVariableAndReturnsValueThroughBaseInterface) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    const AssignmentExpression assignment{"x", std::make_unique<NumberExpression>(3)};
+    const Expression& expression = assignment;
+
+    EXPECT_EQ(expression.evaluate(context), 3);
+    EXPECT_EQ(context.get_variable("x"), 3);
+}
+
+TEST(AssignmentExpressionTest, ReadsPreviousValueBeforeUpdatingVariable) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    context.set_variable("x", 3);
+    const AssignmentExpression expression{"x",
+        std::make_unique<BinaryExpression>(BinaryOperator::Add,
+            std::make_unique<VariableExpression>("x"),
+            std::make_unique<NumberExpression>(2))};
+
+    EXPECT_EQ(expression.evaluate(context), 5);
+    EXPECT_EQ(context.get_variable("x"), 5);
+    EXPECT_EQ(expression.evaluate(context), 7);
+    EXPECT_EQ(context.get_variable("x"), 7);
+}
+
+TEST(AssignmentExpressionTest, EvaluatesRightHandSideOncePerAssignment) {
+    std::istringstream input{"10 -3 99"};
+    RuntimeContext context{input};
+    const AssignmentExpression expression{"x", std::make_unique<InputExpression>()};
+
+    EXPECT_EQ(expression.evaluate(context), 10);
+    EXPECT_EQ(context.get_variable("x"), 10);
+    EXPECT_EQ(expression.evaluate(context), -3);
+    EXPECT_EQ(context.get_variable("x"), -3);
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
+TEST(AssignmentExpressionTest, SupportsChainedAssignments) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    const AssignmentExpression expression{"x",
+        std::make_unique<AssignmentExpression>("y",
+            std::make_unique<NumberExpression>(3))};
+
+    EXPECT_EQ(expression.evaluate(context), 3);
+    EXPECT_EQ(context.get_variable("x"), 3);
+    EXPECT_EQ(context.get_variable("y"), 3);
+}
+
+TEST(AssignmentExpressionTest, UsesAssignmentResultInsideArithmetic) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    const AssignmentExpression expression{"x",
+        std::make_unique<BinaryExpression>(BinaryOperator::Add,
+            std::make_unique<AssignmentExpression>("y",
+                std::make_unique<NumberExpression>(3)),
+            std::make_unique<NumberExpression>(2))};
+
+    EXPECT_EQ(expression.evaluate(context), 5);
+    EXPECT_EQ(context.get_variable("x"), 5);
+    EXPECT_EQ(context.get_variable("y"), 3);
+}
+
+TEST(AssignmentExpressionTest, KeepsPreviousValueWhenRightHandSideFails) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    context.set_variable("x", 42);
+    const AssignmentExpression expression{"x",
+        std::make_unique<BinaryExpression>(BinaryOperator::Div,
+            std::make_unique<NumberExpression>(1),
+            std::make_unique<NumberExpression>(0))};
+
+    EXPECT_THROW(expression.evaluate(context), std::domain_error);
+    EXPECT_EQ(context.get_variable("x"), 42);
+}
+
+TEST(AssignmentExpressionTest, DoesNotCreateVariableWhenRightHandSideFails) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    const AssignmentExpression expression{"x", std::make_unique<VariableExpression>("x")};
+
+    EXPECT_THROW(expression.evaluate(context), std::runtime_error);
+    EXPECT_THROW(context.get_variable("x"), std::runtime_error);
+}
+
+TEST(AssignmentExpressionTest, UpdatesExistingVariableInOuterScope) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    context.set_variable("x", 1);
+    {
+        const ScopeOwner scope{context};
+        const AssignmentExpression outer{"x", std::make_unique<NumberExpression>(2)};
+        const AssignmentExpression local{"y", std::make_unique<NumberExpression>(3)};
+        EXPECT_EQ(outer.evaluate(context), 2);
+        EXPECT_EQ(local.evaluate(context), 3);
+    }
+
+    EXPECT_EQ(context.get_variable("x"), 2);
+    EXPECT_THROW(context.get_variable("y"), std::runtime_error);
+}
+
+TEST(AssignmentExpressionTest, ShortCircuitSkipsAssignmentSideEffects) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    context.set_variable("x", 42);
+    for (const auto operation : {BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
+        SCOPED_TRACE(static_cast<int>(operation));
+        const int left_value = operation == BinaryOperator::LogicalAnd ? 0 : 1;
+        const BinaryExpression expression{operation,
+            std::make_unique<NumberExpression>(left_value),
+            std::make_unique<AssignmentExpression>("x",
+                std::make_unique<NumberExpression>(3))};
+
+        EXPECT_EQ(expression.evaluate(context), left_value);
+        EXPECT_EQ(context.get_variable("x"), 42);
+    }
+}
+
+TEST(AssignmentExpressionTest, OwnsNameIndependentlyOfOriginalString) {
+    std::istringstream input;
+    RuntimeContext context{input};
+    std::string name = "x";
+    const AssignmentExpression expression{name, std::make_unique<NumberExpression>(3)};
+    name.assign(100, 'y');
+
+    EXPECT_EQ(expression.evaluate(context), 3);
+    EXPECT_EQ(context.get_variable("x"), 3);
+    EXPECT_THROW(context.get_variable(name), std::runtime_error);
+}
+
+TEST(AssignmentExpressionTest, RejectsNullRightHandSide) {
+    EXPECT_THROW((AssignmentExpression{"x", nullptr}), std::invalid_argument);
+}
+
 TEST(InputExpressionTest, ReadsNextValueOnEveryEvaluation) {
     std::istringstream input{"  10\n-3\t+4 0"};
     RuntimeContext context{input};
