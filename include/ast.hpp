@@ -1,6 +1,17 @@
 #pragma once
 
+#include <memory>
+#include <utility>
+#include <stdexcept>
+
 namespace ParaCL {
+
+enum class BinaryOperator {
+    Add,
+    Sub,
+    Mul,
+    Div
+};
 
 class Expression {
 public:
@@ -15,6 +26,39 @@ public:
 
 private:
     int value_;
+};
+
+class BinaryExpression : public Expression {
+public:
+    BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+                    : operation_(operation), left_(std::move(left)), right_(std::move(right)) {
+        if (!left_ || !right_) {
+            throw std::invalid_argument("Binary expression operands must not be null");
+        }
+    }
+
+    int evaluate() const override {
+        const int left_value = left_->evaluate();
+        const int right_value = right_->evaluate();
+
+        switch (operation_) {
+            case BinaryOperator::Add: return left_value + right_value;
+            case BinaryOperator::Sub: return left_value - right_value;
+            case BinaryOperator::Mul: return left_value * right_value;
+            case BinaryOperator::Div:
+                if (right_value == 0) {
+                    throw std::domain_error("Division by zero");
+                }
+                return left_value / right_value;
+        }
+
+        throw std::logic_error("Unknown binary operator");
+    }
+
+private:
+    BinaryOperator operation_;
+    std::unique_ptr<Expression> left_;
+    std::unique_ptr<Expression> right_;
 };
 
 } // namespace ParaCL
