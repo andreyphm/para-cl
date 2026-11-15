@@ -13,7 +13,15 @@ enum class BinaryOperator {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
+    Equal,
+    NotEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    LogicalAnd,
+    LogicalOr
 };
 
 enum class UnaryOperator {
@@ -47,17 +55,27 @@ public:
 
     int evaluate(RuntimeContext& context) const override {
         const int left_value = left_->evaluate(context);
-        const int right_value = right_->evaluate(context);
 
         switch (operation_) {
-            case BinaryOperator::Add: return left_value + right_value;
-            case BinaryOperator::Sub: return left_value - right_value;
-            case BinaryOperator::Mul: return left_value * right_value;
-            case BinaryOperator::Div:
+            case BinaryOperator::Add: return left_value + right_->evaluate(context);
+            case BinaryOperator::Sub: return left_value - right_->evaluate(context);
+            case BinaryOperator::Mul: return left_value * right_->evaluate(context);
+            case BinaryOperator::Div: {
+                const int right_value = right_->evaluate(context);
                 if (right_value == 0) {
                     throw std::domain_error("Division by zero");
                 }
                 return left_value / right_value;
+            }
+
+            case BinaryOperator::Equal:        return left_value == right_->evaluate(context);
+            case BinaryOperator::NotEqual:     return left_value != right_->evaluate(context);
+            case BinaryOperator::Less:         return left_value <  right_->evaluate(context);
+            case BinaryOperator::LessEqual:    return left_value <= right_->evaluate(context);
+            case BinaryOperator::Greater:      return left_value >  right_->evaluate(context);
+            case BinaryOperator::GreaterEqual: return left_value >= right_->evaluate(context);
+            case BinaryOperator::LogicalAnd:   return left_value && right_->evaluate(context);
+            case BinaryOperator::LogicalOr:    return left_value || right_->evaluate(context);
         }
 
         throw std::logic_error("Unknown binary operator");
