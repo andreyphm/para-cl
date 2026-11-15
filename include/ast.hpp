@@ -104,4 +104,15 @@ private:
     std::string name_;
 };
 
+class InputExpression : public Expression {
+public:
+    int evaluate(RuntimeContext& context) const override {
+        int value{};
+        if (!(context.input >> value)) {
+            throw std::runtime_error("Failed to read int value");
+        }
+        return value;
+    }
+};
+
 } // namespace ParaCL
