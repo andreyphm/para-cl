@@ -63,4 +63,16 @@ private:
     }
 };
 
+class ScopeOwner {
+public:
+    explicit ScopeOwner(RuntimeContext& context) : context_(context) { context_.enter_scope(); }
+    ~ScopeOwner() { context_.leave_scope(); }
+
+    ScopeOwner(const ScopeOwner&) = delete;
+    ScopeOwner& operator=(const ScopeOwner&) = delete;
+
+private:
+    RuntimeContext& context_;
+};
+
 }
