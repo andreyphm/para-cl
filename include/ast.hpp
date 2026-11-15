@@ -153,4 +153,27 @@ private:
     std::unique_ptr<Expression> expression_;
 };
 
+class Statement {
+public:
+    virtual void execute(RuntimeContext&) const = 0;
+    virtual ~Statement() = default;
+};
+
+class ExpressionStatement : public Statement {
+public:
+    explicit ExpressionStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
+        if (!expression_) {
+            throw std::invalid_argument("Expression must not be null");
+        }
+    }
+
+    void execute(RuntimeContext& context) const override {
+        expression_->evaluate(context);
+    }
+
+private:
+    std::unique_ptr<Expression> expression_;
+};
+
+
 } // namespace ParaCL

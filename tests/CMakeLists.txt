@@ -1,4 +1,4 @@
-foreach(test_target IN ITEMS ast_tests runtime_context_tests)
+foreach(test_target IN ITEMS ast_tests runtime_context_tests statement_tests)
     add_executable(${test_target} unit/${test_target}.cpp)
     target_include_directories(${test_target} PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_link_libraries(${test_target} PRIVATE GTest::gtest_main)
