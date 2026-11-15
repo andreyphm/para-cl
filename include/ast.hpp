@@ -13,6 +13,11 @@ enum class BinaryOperator {
     Div
 };
 
+enum class UnaryOperator {
+    Plus,
+    Minus
+};
+
 class Expression {
 public:
     virtual int evaluate() const = 0;
@@ -59,6 +64,29 @@ private:
     BinaryOperator operation_;
     std::unique_ptr<Expression> left_;
     std::unique_ptr<Expression> right_;
+};
+
+class UnaryExpression : public Expression {
+public:
+    UnaryExpression(UnaryOperator operation, std::unique_ptr<Expression> operand)
+                   : operation_(operation), operand_(std::move(operand)) {
+        if (!operand_) {
+            throw std::invalid_argument("Operand must not be null");
+        }
+    }
+
+    int evaluate() const override {
+        switch (operation_) {
+            case UnaryOperator::Plus:  return operand_->evaluate();
+            case UnaryOperator::Minus: return -operand_->evaluate();
+        }
+
+        throw std::logic_error("Unknown unary operator");
+    }
+
+private:
+    UnaryOperator operation_;
+    std::unique_ptr<Expression> operand_;
 };
 
 } // namespace ParaCL
