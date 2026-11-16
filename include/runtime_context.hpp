@@ -3,6 +3,7 @@
 #include <format>
 #include <istream>
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -14,8 +15,9 @@ namespace ParaCL {
 class RuntimeContext {
 public:
     std::istream& input;
+    std::ostream& output;
 
-    explicit RuntimeContext(std::istream& stream) : input(stream) {}
+    explicit RuntimeContext(std::istream& in_stream, std::ostream& out_stream) : input(in_stream), output(out_stream) {}
 
     int get_variable(const std::string& name) const {
         const int* variable_value = find_variable_value(name);

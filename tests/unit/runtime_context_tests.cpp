@@ -13,7 +13,8 @@ namespace {
 
 TEST(RuntimeContextTest, CreatesAndUpdatesVariablesInGlobalScope) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const RuntimeContext& view = context;
 
     context.set_variable("x", 42);
@@ -26,7 +27,8 @@ TEST(RuntimeContextTest, CreatesAndUpdatesVariablesInGlobalScope) {
 
 TEST(RuntimeContextTest, OwnsVariableNames) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     std::string name = "original";
     context.set_variable(name, 42);
     name.assign(100, 'x');
@@ -37,7 +39,8 @@ TEST(RuntimeContextTest, OwnsVariableNames) {
 
 TEST(RuntimeContextTest, ReportsMissingNameWithoutCreatingVariable) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
 
     try {
         (void)context.get_variable("missing");
@@ -52,7 +55,8 @@ TEST(RuntimeContextTest, ReportsMissingNameWithoutCreatingVariable) {
 
 TEST(RuntimeContextTest, UpdatesExistingOuterVariableWithoutShadowing) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 1);
     context.enter_scope();
 
@@ -65,7 +69,8 @@ TEST(RuntimeContextTest, UpdatesExistingOuterVariableWithoutShadowing) {
 
 TEST(RuntimeContextTest, RemovesOnlyVariablesCreatedInLeavingScope) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("global", 1);
     context.enter_scope();
     context.set_variable("outer", 2);
@@ -84,7 +89,8 @@ TEST(RuntimeContextTest, RemovesOnlyVariablesCreatedInLeavingScope) {
 
 TEST(RuntimeContextTest, CanCreateSameNameAfterItsScopeIsRemoved) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.enter_scope();
     context.set_variable("local", 1);
     context.leave_scope();
@@ -99,7 +105,8 @@ TEST(RuntimeContextTest, CanCreateSameNameAfterItsScopeIsRemoved) {
 
 TEST(RuntimeContextTest, PreservesGlobalScopeAfterRejectedExit) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 1);
 
     EXPECT_THROW(context.leave_scope(), std::logic_error);
@@ -113,7 +120,8 @@ TEST(RuntimeContextTest, PreservesGlobalScopeAfterRejectedExit) {
 
 TEST(RuntimeContextTest, HandlesManyNestedScopes) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("global", 0);
     constexpr int scope_count = 128;
 
@@ -135,7 +143,8 @@ TEST(RuntimeContextTest, HandlesManyNestedScopes) {
 
 TEST(ScopeOwnerTest, RemovesLocalVariablesOnNormalExit) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("global", 1);
     {
         const ScopeOwner scope{context};
@@ -151,7 +160,8 @@ TEST(ScopeOwnerTest, RemovesLocalVariablesOnNormalExit) {
 
 TEST(ScopeOwnerTest, NestedOwnerPreservesOuterScope) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     {
         const ScopeOwner outer{context};
         context.set_variable("outer", 1);
@@ -168,7 +178,8 @@ TEST(ScopeOwnerTest, NestedOwnerPreservesOuterScope) {
 
 TEST(ScopeOwnerTest, RemovesNestedScopesDuringExceptionUnwinding) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("global", 1);
 
     EXPECT_THROW({
@@ -187,7 +198,8 @@ TEST(ScopeOwnerTest, RemovesNestedScopesDuringExceptionUnwinding) {
 
 TEST(ScopeOwnerTest, RemovesScopeOnEarlyReturn) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const auto execute_block = [&context]() {
         const ScopeOwner scope{context};
         context.set_variable("local", 42);

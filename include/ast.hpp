@@ -175,5 +175,23 @@ private:
     std::unique_ptr<Expression> expression_;
 };
 
+class PrintStatement : public Statement {
+public:
+    explicit PrintStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
+        if (!expression_) {
+            throw std::invalid_argument("Expression must not be null");
+        }
+    }
+
+    void execute(RuntimeContext& context) const override {
+        context.output << expression_->evaluate(context) << '\n';
+        if (!context.output) {
+            throw std::runtime_error("Failed to output int value");
+        }
+    }
+
+private:
+    std::unique_ptr<Expression> expression_;
+};
 
 } // namespace ParaCL

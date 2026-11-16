@@ -16,7 +16,8 @@ namespace {
 
 TEST(NumberExpressionTest, EvaluatesIntValuesThroughBaseInterface) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const std::array values{0, 42, -17,
         std::numeric_limits<int>::min(), std::numeric_limits<int>::max()};
 
@@ -40,7 +41,8 @@ class BinaryExpressionTest : public testing::TestWithParam<BinaryCase> {};
 
 TEST_P(BinaryExpressionTest, EvaluatesThroughBaseInterface) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const auto& test_case = GetParam();
     const BinaryExpression binary{test_case.operation,
         std::make_unique<NumberExpression>(test_case.left),
@@ -131,7 +133,8 @@ TEST(BinaryExpressionOrderTest, EvaluatesRequiredOperandsOnceFromLeftToRight) {
              BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
         SCOPED_TRACE(static_cast<int>(operation));
         std::istringstream input;
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         std::vector<int> calls;
         const int left_value = operation == BinaryOperator::LogicalOr ? 0 : 6;
         const BinaryExpression expression{operation,
@@ -148,7 +151,8 @@ TEST(LogicalExpressionTest, ShortCircuitPreservesUnreadInput) {
         SCOPED_TRACE(static_cast<int>(operation));
         const int left_value = operation == BinaryOperator::LogicalAnd ? 0 : -2;
         std::istringstream input{std::format("{} 99", left_value)};
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         const BinaryExpression expression{operation,
             std::make_unique<InputExpression>(), std::make_unique<InputExpression>()};
 
@@ -161,7 +165,8 @@ TEST(LogicalExpressionTest, ShortCircuitSkipsDivisionByZero) {
     for (const auto operation : {BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
         SCOPED_TRACE(static_cast<int>(operation));
         std::istringstream input;
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         const int left_value = operation == BinaryOperator::LogicalAnd ? 0 : -2;
         const BinaryExpression expression{operation,
             std::make_unique<NumberExpression>(left_value),
@@ -177,7 +182,8 @@ TEST(LogicalExpressionTest, EvaluatesRequiredRightOperandAndPropagatesItsError) 
     for (const auto operation : {BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
         SCOPED_TRACE(static_cast<int>(operation));
         std::istringstream input;
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         const int left_value = operation == BinaryOperator::LogicalAnd ? -2 : 0;
         const BinaryExpression expression{operation,
             std::make_unique<NumberExpression>(left_value),
@@ -197,7 +203,8 @@ TEST(BinaryExpressionOrderTest, LeftOperandErrorPreventsRightOperandInput) {
              BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
         SCOPED_TRACE(static_cast<int>(operation));
         std::istringstream input{"99"};
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         const BinaryExpression expression{operation,
             std::make_unique<VariableExpression>("missing"),
             std::make_unique<InputExpression>()};
@@ -209,7 +216,8 @@ TEST(BinaryExpressionOrderTest, LeftOperandErrorPreventsRightOperandInput) {
 
 TEST(BinaryExpressionErrorTest, RejectsDivisionByZero) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{BinaryOperator::Div,
         std::make_unique<NumberExpression>(7),
         std::make_unique<NumberExpression>(0)};
@@ -228,7 +236,8 @@ TEST(BinaryExpressionErrorTest, RejectsNullOperands) {
 
 TEST(BinaryExpressionErrorTest, RejectsUnknownOperator) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{static_cast<BinaryOperator>(99),
         std::make_unique<NumberExpression>(1),
         std::make_unique<NumberExpression>(2)};
@@ -238,7 +247,8 @@ TEST(BinaryExpressionErrorTest, RejectsUnknownOperator) {
 
 TEST(ExpressionTreeTest, EvaluatesNestedArithmetic) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{BinaryOperator::Add,
         std::make_unique<NumberExpression>(2),
         std::make_unique<BinaryExpression>(BinaryOperator::Mul,
@@ -250,7 +260,8 @@ TEST(ExpressionTreeTest, EvaluatesNestedArithmetic) {
 
 TEST(UnaryExpressionTest, EvaluatesBothOperators) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     for (const int value : {0, 5, -5, std::numeric_limits<int>::max()}) {
         SCOPED_TRACE(value);
         const UnaryExpression plus{UnaryOperator::Plus,
@@ -267,7 +278,8 @@ TEST(UnaryExpressionTest, EvaluatesBothOperators) {
 
 TEST(UnaryExpressionTest, EvaluatesNestedNegation) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const UnaryExpression expression{UnaryOperator::Minus,
         std::make_unique<UnaryExpression>(UnaryOperator::Minus,
             std::make_unique<NumberExpression>(5))};
@@ -282,7 +294,8 @@ TEST(UnaryExpressionTest, RejectsNullOperand) {
 
 TEST(UnaryExpressionTest, RejectsUnknownOperator) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const UnaryExpression expression{static_cast<UnaryOperator>(99),
         std::make_unique<NumberExpression>(1)};
 
@@ -291,7 +304,8 @@ TEST(UnaryExpressionTest, RejectsUnknownOperator) {
 
 TEST(VariableExpressionTest, ReadsUpdatedValueThroughNestedExpressions) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{BinaryOperator::Add,
         std::make_unique<UnaryExpression>(UnaryOperator::Minus,
             std::make_unique<VariableExpression>("x")),
@@ -306,8 +320,10 @@ TEST(VariableExpressionTest, ReadsUpdatedValueThroughNestedExpressions) {
 TEST(VariableExpressionTest, UsesContextProvidedForEachEvaluation) {
     std::istringstream first_input;
     std::istringstream second_input;
-    RuntimeContext first{first_input};
-    RuntimeContext second{second_input};
+    std::ostringstream first_output;
+    RuntimeContext first{first_input, first_output};
+    std::ostringstream second_output;
+    RuntimeContext second{second_input, second_output};
     first.set_variable("x", 3);
     second.set_variable("x", 7);
     const VariableExpression variable{"x"};
@@ -319,7 +335,8 @@ TEST(VariableExpressionTest, UsesContextProvidedForEachEvaluation) {
 
 TEST(VariableExpressionTest, OwnsNameIndependentlyOfOriginalString) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 42);
     std::string name = "x";
     const VariableExpression expression{name};
@@ -330,7 +347,8 @@ TEST(VariableExpressionTest, OwnsNameIndependentlyOfOriginalString) {
 
 TEST(VariableExpressionTest, ReportsUnknownName) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const VariableExpression expression{"missing"};
 
     EXPECT_THROW(expression.evaluate(context), std::runtime_error);
@@ -338,7 +356,8 @@ TEST(VariableExpressionTest, ReportsUnknownName) {
 
 TEST(AssignmentExpressionTest, CreatesVariableAndReturnsValueThroughBaseInterface) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const AssignmentExpression assignment{"x", std::make_unique<NumberExpression>(3)};
     const Expression& expression = assignment;
 
@@ -348,7 +367,8 @@ TEST(AssignmentExpressionTest, CreatesVariableAndReturnsValueThroughBaseInterfac
 
 TEST(AssignmentExpressionTest, ReadsPreviousValueBeforeUpdatingVariable) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 3);
     const AssignmentExpression expression{"x",
         std::make_unique<BinaryExpression>(BinaryOperator::Add,
@@ -363,7 +383,8 @@ TEST(AssignmentExpressionTest, ReadsPreviousValueBeforeUpdatingVariable) {
 
 TEST(AssignmentExpressionTest, EvaluatesRightHandSideOncePerAssignment) {
     std::istringstream input{"10 -3 99"};
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const AssignmentExpression expression{"x", std::make_unique<InputExpression>()};
 
     EXPECT_EQ(expression.evaluate(context), 10);
@@ -375,7 +396,8 @@ TEST(AssignmentExpressionTest, EvaluatesRightHandSideOncePerAssignment) {
 
 TEST(AssignmentExpressionTest, SupportsChainedAssignments) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const AssignmentExpression expression{"x",
         std::make_unique<AssignmentExpression>("y",
             std::make_unique<NumberExpression>(3))};
@@ -387,7 +409,8 @@ TEST(AssignmentExpressionTest, SupportsChainedAssignments) {
 
 TEST(AssignmentExpressionTest, UsesAssignmentResultInsideArithmetic) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const AssignmentExpression expression{"x",
         std::make_unique<BinaryExpression>(BinaryOperator::Add,
             std::make_unique<AssignmentExpression>("y",
@@ -401,7 +424,8 @@ TEST(AssignmentExpressionTest, UsesAssignmentResultInsideArithmetic) {
 
 TEST(AssignmentExpressionTest, KeepsPreviousValueWhenRightHandSideFails) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 42);
     const AssignmentExpression expression{"x",
         std::make_unique<BinaryExpression>(BinaryOperator::Div,
@@ -414,7 +438,8 @@ TEST(AssignmentExpressionTest, KeepsPreviousValueWhenRightHandSideFails) {
 
 TEST(AssignmentExpressionTest, DoesNotCreateVariableWhenRightHandSideFails) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const AssignmentExpression expression{"x", std::make_unique<VariableExpression>("x")};
 
     EXPECT_THROW(expression.evaluate(context), std::runtime_error);
@@ -423,7 +448,8 @@ TEST(AssignmentExpressionTest, DoesNotCreateVariableWhenRightHandSideFails) {
 
 TEST(AssignmentExpressionTest, UpdatesExistingVariableInOuterScope) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 1);
     {
         const ScopeOwner scope{context};
@@ -439,7 +465,8 @@ TEST(AssignmentExpressionTest, UpdatesExistingVariableInOuterScope) {
 
 TEST(AssignmentExpressionTest, ShortCircuitSkipsAssignmentSideEffects) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     context.set_variable("x", 42);
     for (const auto operation : {BinaryOperator::LogicalAnd, BinaryOperator::LogicalOr}) {
         SCOPED_TRACE(static_cast<int>(operation));
@@ -456,7 +483,8 @@ TEST(AssignmentExpressionTest, ShortCircuitSkipsAssignmentSideEffects) {
 
 TEST(AssignmentExpressionTest, OwnsNameIndependentlyOfOriginalString) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     std::string name = "x";
     const AssignmentExpression expression{name, std::make_unique<NumberExpression>(3)};
     name.assign(100, 'y');
@@ -472,7 +500,8 @@ TEST(AssignmentExpressionTest, RejectsNullRightHandSide) {
 
 TEST(InputExpressionTest, ReadsNextValueOnEveryEvaluation) {
     std::istringstream input{"  10\n-3\t+4 0"};
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const InputExpression read;
     const Expression& expression = read;
 
@@ -486,7 +515,8 @@ TEST(InputExpressionTest, ReadsNextValueOnEveryEvaluation) {
 TEST(InputExpressionTest, ReadsIntLimits) {
     std::istringstream input{std::format("{} {}",
         std::numeric_limits<int>::min(), std::numeric_limits<int>::max())};
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const InputExpression expression;
 
     EXPECT_EQ(expression.evaluate(context), std::numeric_limits<int>::min());
@@ -498,7 +528,8 @@ TEST(InputExpressionTest, RejectsInvalidOrMissingInput) {
     for (const std::string text : {"", " \n\t", "abc", "+", "-"}) {
         SCOPED_TRACE(text);
         std::istringstream input{text};
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         EXPECT_THROW(expression.evaluate(context), std::runtime_error);
     }
 }
@@ -511,14 +542,16 @@ TEST(InputExpressionTest, RejectsValuesOutsideIntRange) {
     for (const auto& text : {above_max, below_min}) {
         SCOPED_TRACE(text);
         std::istringstream input{text};
-        RuntimeContext context{input};
+        std::ostringstream context_output;
+        RuntimeContext context{input, context_output};
         EXPECT_THROW(expression.evaluate(context), std::runtime_error);
     }
 }
 
 TEST(InputExpressionTest, UsesFormattedStreamNumericPrefixRules) {
     std::istringstream input{"12abc"};
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const InputExpression expression;
 
     EXPECT_EQ(expression.evaluate(context), 12);
@@ -528,7 +561,8 @@ TEST(InputExpressionTest, UsesFormattedStreamNumericPrefixRules) {
 
 TEST(ExpressionTreeTest, EvaluatesInputOperandsOnceFromLeftToRight) {
     std::istringstream input{"10 3 99"};
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{BinaryOperator::Sub,
         std::make_unique<InputExpression>(), std::make_unique<InputExpression>()};
 
@@ -538,7 +572,8 @@ TEST(ExpressionTreeTest, EvaluatesInputOperandsOnceFromLeftToRight) {
 
 TEST(ExpressionTreeTest, PropagatesOperandErrors) {
     std::istringstream input;
-    RuntimeContext context{input};
+    std::ostringstream context_output;
+    RuntimeContext context{input, context_output};
     const BinaryExpression expression{BinaryOperator::Add,
         std::make_unique<NumberExpression>(1),
         std::make_unique<VariableExpression>("missing")};
