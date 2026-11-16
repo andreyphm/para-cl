@@ -8,6 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 include(cmake/warnings.cmake)
 
+add_library(para_cl_core STATIC
+    source/ast.cpp
+    source/runtime_context.cpp
+    source/lexer.cpp)
+target_include_directories(para_cl_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
+para_cl_enable_warnings(para_cl_core)
+
 if(BUILD_TESTING)
     include(FetchContent)
 
@@ -24,6 +31,6 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-add_executable(para_cl source/main.cpp source/lexer.cpp)
-target_include_directories(para_cl PRIVATE ${PROJECT_SOURCE_DIR}/include)
+add_executable(para_cl source/main.cpp)
+target_link_libraries(para_cl PRIVATE para_cl_core)
 para_cl_enable_warnings(para_cl)

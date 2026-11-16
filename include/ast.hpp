@@ -3,7 +3,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include <stdexcept>
 #include <string>
 
 #include "runtime_context.hpp"
@@ -47,40 +46,8 @@ private:
 
 class BinaryExpression : public Expression {
 public:
-    BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
-                    : operation_(operation), left_(std::move(left)), right_(std::move(right)) {
-        if (!left_ || !right_) {
-            throw std::invalid_argument("Binary expression operands must not be null");
-        }
-    }
-
-    int evaluate(RuntimeContext& context) const override {
-        const int left_value = left_->evaluate(context);
-
-        switch (operation_) {
-            case BinaryOperator::Add: return left_value + right_->evaluate(context);
-            case BinaryOperator::Sub: return left_value - right_->evaluate(context);
-            case BinaryOperator::Mul: return left_value * right_->evaluate(context);
-            case BinaryOperator::Div: {
-                const int right_value = right_->evaluate(context);
-                if (right_value == 0) {
-                    throw std::domain_error("Division by zero");
-                }
-                return left_value / right_value;
-            }
-
-            case BinaryOperator::Equal:        return left_value == right_->evaluate(context);
-            case BinaryOperator::NotEqual:     return left_value != right_->evaluate(context);
-            case BinaryOperator::Less:         return left_value <  right_->evaluate(context);
-            case BinaryOperator::LessEqual:    return left_value <= right_->evaluate(context);
-            case BinaryOperator::Greater:      return left_value >  right_->evaluate(context);
-            case BinaryOperator::GreaterEqual: return left_value >= right_->evaluate(context);
-            case BinaryOperator::LogicalAnd:   return left_value && right_->evaluate(context);
-            case BinaryOperator::LogicalOr:    return left_value || right_->evaluate(context);
-        }
-
-        throw std::logic_error("Unknown binary operator");
-    }
+    BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
+    int evaluate(RuntimeContext& context) const override;
 
 private:
     BinaryOperator operation_;
@@ -90,21 +57,8 @@ private:
 
 class UnaryExpression : public Expression {
 public:
-    UnaryExpression(UnaryOperator operation, std::unique_ptr<Expression> operand)
-                   : operation_(operation), operand_(std::move(operand)) {
-        if (!operand_) {
-            throw std::invalid_argument("Operand must not be null");
-        }
-    }
-
-    int evaluate(RuntimeContext& context) const override {
-        switch (operation_) {
-            case UnaryOperator::Plus:  return operand_->evaluate(context);
-            case UnaryOperator::Minus: return -operand_->evaluate(context);
-        }
-
-        throw std::logic_error("Unknown unary operator");
-    }
+    UnaryExpression(UnaryOperator operation, std::unique_ptr<Expression> operand);
+    int evaluate(RuntimeContext& context) const override;
 
 private:
     UnaryOperator operation_;
@@ -114,7 +68,6 @@ private:
 class VariableExpression : public Expression {
 public:
     explicit VariableExpression(std::string name) : name_(std::move(name)) {}
-
     int evaluate(RuntimeContext& context) const override {
         return context.get_variable(name_);
     }
@@ -125,29 +78,13 @@ private:
 
 class InputExpression : public Expression {
 public:
-    int evaluate(RuntimeContext& context) const override {
-        int value{};
-        if (!(context.input >> value)) {
-            throw std::runtime_error("Failed to read int value");
-        }
-        return value;
-    }
+    int evaluate(RuntimeContext& context) const override;
 };
 
 class AssignmentExpression : public Expression {
 public:
-    AssignmentExpression(std::string name, std::unique_ptr<Expression> expression)
-                        : name_(std::move(name)), expression_(std::move(expression)) {
-        if (!expression_) {
-            throw std::invalid_argument("Assignment expression must not be null");
-        }
-    }
-
-    int evaluate(RuntimeContext& context) const override {
-        const int value = expression_->evaluate(context);
-        context.set_variable(name_, value);
-        return value;
-    }
+    AssignmentExpression(std::string name, std::unique_ptr<Expression> expression);
+    int evaluate(RuntimeContext& context) const override;
 
 private:
     std::string name_;
@@ -162,12 +99,7 @@ public:
 
 class ExpressionStatement : public Statement {
 public:
-    explicit ExpressionStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
-        if (!expression_) {
-            throw std::invalid_argument("Expression must not be null");
-        }
-    }
-
+    explicit ExpressionStatement(std::unique_ptr<Expression> expression);
     void execute(RuntimeContext& context) const override {
         expression_->evaluate(context);
     }
@@ -178,18 +110,8 @@ private:
 
 class PrintStatement : public Statement {
 public:
-    explicit PrintStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
-        if (!expression_) {
-            throw std::invalid_argument("Expression must not be null");
-        }
-    }
-
-    void execute(RuntimeContext& context) const override {
-        context.output << expression_->evaluate(context) << '\n';
-        if (!context.output) {
-            throw std::runtime_error("Failed to output int value");
-        }
-    }
+    explicit PrintStatement(std::unique_ptr<Expression> expression);
+    void execute(RuntimeContext& context) const override;
 
 private:
     std::unique_ptr<Expression> expression_;
@@ -197,20 +119,8 @@ private:
 
 class BlockStatement : public Statement {
 public:
-    explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements) : statements_(std::move(statements)) {
-        for (const auto& statement : statements_) {
-            if (!statement) {
-                throw std::invalid_argument("Statement must not be null");
-            }
-        }
-    }
-
-    void execute(RuntimeContext& context) const override {
-        ScopeOwner scope{context};
-        for (const auto& statement : statements_) {
-            statement->execute(context);
-        }
-    }
+    explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements);
+    void execute(RuntimeContext& context) const override;
 
 private:
     std::vector<std::unique_ptr<Statement>> statements_;
@@ -218,16 +128,7 @@ private:
 
 class IfStatement : public Statement {
 public:
-    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
-               : condition_(std::move(condition)), body_(std::move(body)) {
-        if (!condition_) {
-            throw std::invalid_argument("'if' condition must not be null");
-        }
-        if (!body_) {
-            throw std::invalid_argument("'if' body must not be null");
-        }
-    }
-
+    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body);
     void execute(RuntimeContext& context) const override {
         if (condition_->evaluate(context)) {
             body_->execute(context);
@@ -241,16 +142,7 @@ private:
 
 class WhileStatement : public Statement {
 public:
-    WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
-                  : condition_(std::move(condition)), body_(std::move(body)) {
-        if (!condition_) {
-            throw std::invalid_argument("'while' condition must not be null");
-        }
-        if (!body_) {
-            throw std::invalid_argument("'while' body must not be null");
-        }
-    }
-
+    WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body);
     void execute(RuntimeContext& context) const override {
         while (condition_->evaluate(context)) {
             body_->execute(context);
