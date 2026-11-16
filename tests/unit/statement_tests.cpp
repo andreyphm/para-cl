@@ -463,5 +463,155 @@ TEST(BlockStatementTest, DestroysOwnedStatementsThroughBasePointer) {
     EXPECT_EQ(destruction_count, 2);
 }
 
+TEST(IfStatementTest, ExecutesBodyForNonzeroConditionThroughBaseInterface) {
+    for (const int value : {1, -2}) {
+        SCOPED_TRACE(value);
+        std::istringstream input;
+        std::ostringstream output;
+        RuntimeContext context{input, output};
+        const IfStatement conditional{std::make_unique<NumberExpression>(value),
+            std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+        const Statement& statement = conditional;
+
+        statement.execute(context);
+
+        EXPECT_EQ(output.str(), "42\n");
+    }
+}
+
+TEST(IfStatementTest, ZeroConditionSkipsBodyAndItsErrors) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{std::make_unique<NumberExpression>(0),
+        std::make_unique<PrintStatement>(
+            std::make_unique<BinaryExpression>(BinaryOperator::Div,
+                std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0)))};
+
+    EXPECT_NO_THROW(statement.execute(context));
+    EXPECT_TRUE(output.str().empty());
+}
+
+TEST(IfStatementTest, ZeroConditionDoesNotConsumeBodyInput) {
+    std::istringstream input{"99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{std::make_unique<NumberExpression>(0),
+        std::make_unique<ExpressionStatement>(std::make_unique<InputExpression>())};
+
+    statement.execute(context);
+
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
+TEST(IfStatementTest, EvaluatesConditionOnceAndPreservesItsSideEffects) {
+    std::istringstream input{"1 0 99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{
+        std::make_unique<AssignmentExpression>("condition", std::make_unique<InputExpression>()),
+        std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("condition"))};
+
+    statement.execute(context);
+    EXPECT_EQ(output.str(), "1\n");
+    EXPECT_EQ(context.get_variable("condition"), 1);
+    statement.execute(context);
+    EXPECT_EQ(output.str(), "1\n");
+    EXPECT_EQ(context.get_variable("condition"), 0);
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
+TEST(IfStatementTest, ConditionErrorPreventsBodyExecution) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{std::make_unique<VariableExpression>("missing"),
+        std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+
+    EXPECT_THROW(statement.execute(context), std::runtime_error);
+    EXPECT_TRUE(output.str().empty());
+}
+
+TEST(IfStatementTest, PropagatesBodyErrorAndUnwindsBlockScope) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("global", 42);
+    std::vector<std::unique_ptr<Statement>> body;
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<BinaryExpression>(BinaryOperator::Div,
+            std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0))));
+    const IfStatement statement{std::make_unique<NumberExpression>(1),
+        std::make_unique<BlockStatement>(std::move(body))};
+
+    EXPECT_THROW(statement.execute(context), std::domain_error);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    EXPECT_EQ(context.get_variable("global"), 42);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(IfStatementTest, DoesNotCreateScopeForSingleStatementBody) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{std::make_unique<NumberExpression>(1),
+        std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(42)))};
+
+    statement.execute(context);
+
+    EXPECT_EQ(context.get_variable("x"), 42);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(IfStatementTest, BlockBodyRemovesLocalsAndUpdatesOuterVariables) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("x", 1);
+    std::vector<std::unique_ptr<Statement>> body;
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(3))));
+    const IfStatement statement{std::make_unique<NumberExpression>(1),
+        std::make_unique<BlockStatement>(std::move(body))};
+
+    statement.execute(context);
+
+    EXPECT_EQ(context.get_variable("x"), 3);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(IfStatementTest, RejectsNullConditionOrBodyAndReleasesOtherNode) {
+    int destruction_count = 0;
+    EXPECT_THROW((IfStatement{nullptr,
+        std::make_unique<ExpressionStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count))}),
+        std::invalid_argument);
+    EXPECT_EQ(destruction_count, 1);
+    EXPECT_THROW((IfStatement{
+        std::make_unique<DestructionProbeExpression>(destruction_count), nullptr}),
+        std::invalid_argument);
+    EXPECT_EQ(destruction_count, 2);
+    EXPECT_THROW((IfStatement{nullptr, nullptr}), std::invalid_argument);
+}
+
+TEST(IfStatementTest, ReleasesConditionAndBodyThroughBasePointer) {
+    int destruction_count = 0;
+    {
+        const std::unique_ptr<Statement> statement = std::make_unique<IfStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count),
+            std::make_unique<ExpressionStatement>(
+                std::make_unique<DestructionProbeExpression>(destruction_count)));
+        EXPECT_EQ(destruction_count, 0);
+    }
+
+    EXPECT_EQ(destruction_count, 2);
+}
+
 } // namespace
 } // namespace ParaCL

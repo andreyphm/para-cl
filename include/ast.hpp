@@ -216,4 +216,27 @@ private:
     std::vector<std::unique_ptr<Statement>> statements_;
 };
 
+class IfStatement : public Statement {
+public:
+    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
+               : condition_(std::move(condition)), body_(std::move(body)) {
+        if (!condition_) {
+            throw std::invalid_argument("'if' condition must not be null");
+        }
+        if (!body_) {
+            throw std::invalid_argument("'if' body must not be null");
+        }
+    }
+
+    void execute(RuntimeContext& context) const override {
+        if (condition_->evaluate(context)) {
+            body_->execute(context);
+        }
+    }
+
+private:
+    std::unique_ptr<Expression> condition_;
+    std::unique_ptr<Statement> body_;
+};
+
 } // namespace ParaCL
