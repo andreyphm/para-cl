@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 #include <stdexcept>
 #include <string>
 
@@ -192,6 +193,27 @@ public:
 
 private:
     std::unique_ptr<Expression> expression_;
+};
+
+class BlockStatement : public Statement {
+public:
+    explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements) : statements_(std::move(statements)) {
+        for (const auto& statement : statements_) {
+            if (!statement) {
+                throw std::invalid_argument("Statement must not be null");
+            }
+        }
+    }
+
+    void execute(RuntimeContext& context) const override {
+        ScopeOwner scope{context};
+        for (const auto& statement : statements_) {
+            statement->execute(context);
+        }
+    }
+
+private:
+    std::vector<std::unique_ptr<Statement>> statements_;
 };
 
 } // namespace ParaCL

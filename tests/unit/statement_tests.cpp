@@ -11,6 +11,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <streambuf>
+#include <utility>
+#include <vector>
 
 namespace ParaCL {
 namespace {
@@ -278,6 +280,187 @@ TEST(PrintStatementTest, DestroysOwnedExpressionThroughBaseStatementPointer) {
     }
 
     EXPECT_EQ(destruction_count, 1);
+}
+
+TEST(BlockStatementTest, ExecutesEmptyBlockWithoutRemovingGlobalScope) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("global", 42);
+    const BlockStatement block{std::vector<std::unique_ptr<Statement>>{}};
+    const Statement& statement = block;
+
+    EXPECT_NO_THROW(statement.execute(context));
+    EXPECT_EQ(context.get_variable("global"), 42);
+    EXPECT_TRUE(output.str().empty());
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, ExecutesStatementsInOrderAndRemovesLocalVariables) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(3))));
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x",
+            std::make_unique<BinaryExpression>(BinaryOperator::Add,
+                std::make_unique<VariableExpression>("x"),
+                std::make_unique<NumberExpression>(2)))));
+    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    const BlockStatement block{std::move(statements)};
+
+    block.execute(context);
+
+    EXPECT_EQ(output.str(), "5\n");
+    EXPECT_THROW(context.get_variable("x"), std::runtime_error);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, PreservesUpdatesToExistingOuterVariables) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("x", 1);
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(2))));
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(3))));
+    const BlockStatement block{std::move(statements)};
+
+    block.execute(context);
+
+    EXPECT_EQ(context.get_variable("x"), 2);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+}
+
+TEST(BlockStatementTest, NestedBlockCanReadAndUpdateEnclosingBlockVariable) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    std::vector<std::unique_ptr<Statement>> inner;
+    inner.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    inner.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(4))));
+    inner.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("inner", std::make_unique<NumberExpression>(3))));
+
+    std::vector<std::unique_ptr<Statement>> outer;
+    outer.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(2))));
+    outer.push_back(std::make_unique<BlockStatement>(std::move(inner)));
+    outer.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    const BlockStatement block{std::move(outer)};
+
+    block.execute(context);
+
+    EXPECT_EQ(output.str(), "2\n4\n");
+    EXPECT_THROW(context.get_variable("x"), std::runtime_error);
+    EXPECT_THROW(context.get_variable("inner"), std::runtime_error);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, ErrorStopsExecutionAndRemovesScopeWithoutUndoingEarlierEffects) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("x", 1);
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
+    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("local")));
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(3))));
+    statements.push_back(std::make_unique<PrintStatement>(
+        std::make_unique<BinaryExpression>(BinaryOperator::Div,
+            std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0))));
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(99))));
+    const BlockStatement block{std::move(statements)};
+
+    EXPECT_THROW(block.execute(context), std::domain_error);
+    EXPECT_EQ(context.get_variable("x"), 3);
+    EXPECT_EQ(output.str(), "2\n");
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, UnwindsAllNestedBlockScopesOnError) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("global", 42);
+    std::vector<std::unique_ptr<Statement>> inner;
+    inner.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("inner", std::make_unique<NumberExpression>(2))));
+    inner.push_back(std::make_unique<ExpressionStatement>(std::make_unique<VariableExpression>("missing")));
+
+    std::vector<std::unique_ptr<Statement>> outer;
+    outer.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("outer", std::make_unique<NumberExpression>(1))));
+    outer.push_back(std::make_unique<BlockStatement>(std::move(inner)));
+    const BlockStatement block{std::move(outer)};
+
+    EXPECT_THROW(block.execute(context), std::runtime_error);
+    EXPECT_THROW(context.get_variable("outer"), std::runtime_error);
+    EXPECT_THROW(context.get_variable("inner"), std::runtime_error);
+    EXPECT_EQ(context.get_variable("global"), 42);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, CreatesFreshLocalScopeOnEveryExecution) {
+    std::istringstream input{"10 -3 99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<InputExpression>())));
+    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("local")));
+    const BlockStatement block{std::move(statements)};
+
+    block.execute(context);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    block.execute(context);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    EXPECT_EQ(output.str(), "10\n-3\n");
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(BlockStatementTest, RejectsNullAtAnyPositionAndReleasesOtherStatements) {
+    for (int null_position = 0; null_position < 3; ++null_position) {
+        SCOPED_TRACE(null_position);
+        int destruction_count = 0;
+        std::vector<std::unique_ptr<Statement>> statements;
+        for (int i = 0; i < 3; ++i) {
+            if (i == null_position) {
+                statements.push_back(nullptr);
+            } else {
+                statements.push_back(std::make_unique<ExpressionStatement>(
+                    std::make_unique<DestructionProbeExpression>(destruction_count)));
+            }
+        }
+
+        EXPECT_THROW((BlockStatement{std::move(statements)}), std::invalid_argument);
+        EXPECT_EQ(destruction_count, 2);
+    }
+}
+
+TEST(BlockStatementTest, DestroysOwnedStatementsThroughBasePointer) {
+    int destruction_count = 0;
+    {
+        std::vector<std::unique_ptr<Statement>> statements;
+        statements.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count)));
+        statements.push_back(std::make_unique<PrintStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count)));
+        const std::unique_ptr<Statement> block = std::make_unique<BlockStatement>(std::move(statements));
+        EXPECT_EQ(destruction_count, 0);
+    }
+
+    EXPECT_EQ(destruction_count, 2);
 }
 
 } // namespace
