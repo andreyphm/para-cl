@@ -25,6 +25,7 @@ private:
     void skip_spaces();
     Token read_number();
     Token read_identifier_or_keyword();
+    Token read_operator();
 };
 
 } // namespace ParaCL

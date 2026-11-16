@@ -50,4 +50,4 @@ struct Token {
     SourcePosition position;
 };
 
-}
+} // namespace ParaCL
