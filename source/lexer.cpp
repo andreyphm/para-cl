@@ -19,7 +19,7 @@ bool is_identifier_symbol(unsigned char symbol) {
 } // namespace
 
 Token Lexer::next_token() {
-    skip_spaces();
+    skip_spaces_and_comments();
     if (at_end()) {
         return {TokenKind::EndOfFile, "", position_};
     }
@@ -53,9 +53,19 @@ unsigned char Lexer::current_symbol() const {
     return text_[index_];
 }
 
-void Lexer::skip_spaces() {
-    while (!at_end() && std::isspace(current_symbol())) {
-        advance();
+void Lexer::skip_spaces_and_comments() {
+    while (!at_end()) {
+        while (!at_end() && std::isspace(current_symbol())) {
+            advance();
+        }
+
+        if (text_.compare(index_, 2, "//") != 0) {
+            return;
+        }
+
+        while (!at_end() && current_symbol() != '\n') {
+            advance();
+        }
     }
 }
 

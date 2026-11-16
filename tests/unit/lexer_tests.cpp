@@ -259,6 +259,60 @@ TEST(LexerTest, ReportsUnknownSymbolPosition) {
     }
 }
 
+TEST(LexerTest, SkipsCommentAtEndOfSourceAndReturnsStableEndOfFile) {
+    for (const std::string& source : {std::string("//"), std::string("// comment")}) {
+        Lexer lexer{source};
+        expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 1, source.size() + 1);
+        expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 1, source.size() + 1);
+    }
+}
+
+TEST(LexerTest, SkipsTrailingCommentWithoutNewlineAfterToken) {
+    const std::string source = "12// trailing comment";
+    Lexer lexer{source};
+    expect_token(lexer.next_token(), TokenKind::Number, "12", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 1, source.size() + 1);
+}
+
+TEST(LexerTest, SkipsConsecutiveCommentsAndWhitespaceAcrossLines) {
+    Lexer lexer{" \t// first\r\n// second\n \n 7"};
+    expect_token(lexer.next_token(), TokenKind::Number, "7", 4, 2);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 4, 3);
+}
+
+TEST(LexerTest, KeepsTokensSeparateAcrossComments) {
+    Lexer lexer{"12// comment\n34//\nname// end"};
+    expect_token(lexer.next_token(), TokenKind::Number, "12", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::Number, "34", 2, 1);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "name", 3, 1);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 3, 11);
+}
+
+TEST(LexerTest, IgnoresTokenSpellingsAndInvalidBytesInsideComments) {
+    const std::string source = std::format("// {} {} {} {}\n42",
+        spelling_for(TokenKind::Output), spelling_for(TokenKind::Equal),
+        unknown_symbol(), std::string{ '\0', static_cast<char>(0xff) });
+    Lexer lexer{source};
+    expect_token(lexer.next_token(), TokenKind::Number, "42", 2, 1);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, 3);
+}
+
+TEST(LexerTest, PreservesDivisionBeforeAndAfterComment) {
+    const std::string division = spelling_for(TokenKind::Div);
+    Lexer lexer{std::format("8 {} 2// ignored\n{}", division, division)};
+    expect_token(lexer.next_token(), TokenKind::Number, "8", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::Div, division, 1, 3);
+    expect_token(lexer.next_token(), TokenKind::Number, "2", 1, division.size() + 4);
+    expect_token(lexer.next_token(), TokenKind::Div, division, 2, 1);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, division.size() + 1);
+}
+
+TEST(LexerTest, SkipsLongCommentWithRepeatedCommentMarkers) {
+    Lexer lexer{std::format("//{}\n42", std::string(100000, '/'))};
+    expect_token(lexer.next_token(), TokenKind::Number, "42", 2, 1);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, 3);
+}
+
 TEST(LexerTest, ReturnedTokenSurvivesLexerDestruction) {
     const Token token = [] {
         Lexer lexer{std::string(100, '7')};
