@@ -51,6 +51,44 @@ TEST(LexerTest, TracksPositionsAcrossNumbersAndLines) {
     expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 4, 4);
 }
 
+TEST(LexerTest, ReadsCompleteIdentifiersAndTracksPositions) {
+    Lexer lexer{"count _value2 A9\n x"};
+    expect_token(lexer.next_token(), TokenKind::Identifier, "count", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "_value2", 1, 7);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "A9", 1, 15);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "x", 2, 2);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, 3);
+}
+
+TEST(LexerTest, KeepsKeywordPrefixesInsideIdentifiers) {
+    Lexer lexer{"if_count while2 print_value"};
+    expect_token(lexer.next_token(), TokenKind::Identifier, "if_count", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "while2", 1, 10);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "print_value", 1, 17);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 1, 28);
+}
+
+TEST(LexerTest, RecognizesKeywordsAndTracksTheirPositions) {
+    Lexer lexer{"if while\n print"};
+    expect_token(lexer.next_token(), TokenKind::If, "if", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::While, "while", 1, 4);
+    expect_token(lexer.next_token(), TokenKind::Output, "print", 2, 2);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, 7);
+}
+
+TEST(LexerTest, MatchesOnlyCompleteCaseSensitiveKeywords) {
+    Lexer lexer{"If WHILE Print ifx xwhile print0 _if if_"};
+    expect_token(lexer.next_token(), TokenKind::Identifier, "If", 1, 1);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "WHILE", 1, 4);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "Print", 1, 10);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "ifx", 1, 16);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "xwhile", 1, 20);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "print0", 1, 27);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "_if", 1, 34);
+    expect_token(lexer.next_token(), TokenKind::Identifier, "if_", 1, 38);
+    expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 1, 41);
+}
+
 TEST(LexerTest, ReturnedTokenSurvivesLexerDestruction) {
     const Token token = [] {
         Lexer lexer{std::string(100, '7')};

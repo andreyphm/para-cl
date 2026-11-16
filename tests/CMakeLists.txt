@@ -7,3 +7,5 @@ foreach(test_target IN ITEMS ast_tests runtime_context_tests statement_tests lex
 
     gtest_discover_tests(${test_target} PROPERTIES TIMEOUT 10)
 endforeach()
+
+target_sources(lexer_tests PRIVATE ${PROJECT_SOURCE_DIR}/source/lexer.cpp)

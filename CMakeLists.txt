@@ -24,5 +24,6 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-add_executable(para_cl source/main.cpp)
+add_executable(para_cl source/main.cpp source/lexer.cpp)
+target_include_directories(para_cl PRIVATE ${PROJECT_SOURCE_DIR}/include)
 para_cl_enable_warnings(para_cl)
