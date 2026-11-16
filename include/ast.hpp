@@ -239,4 +239,27 @@ private:
     std::unique_ptr<Statement> body_;
 };
 
+class WhileStatement : public Statement {
+public:
+    WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
+                  : condition_(std::move(condition)), body_(std::move(body)) {
+        if (!condition_) {
+            throw std::invalid_argument("'while' condition must not be null");
+        }
+        if (!body_) {
+            throw std::invalid_argument("'while' body must not be null");
+        }
+    }
+
+    void execute(RuntimeContext& context) const override {
+        while (condition_->evaluate(context)) {
+            body_->execute(context);
+        }
+    }
+
+private:
+    std::unique_ptr<Expression> condition_;
+    std::unique_ptr<Statement> body_;
+};
+
 } // namespace ParaCL

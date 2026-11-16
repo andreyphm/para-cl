@@ -5,5 +5,5 @@ foreach(test_target IN ITEMS ast_tests runtime_context_tests statement_tests)
 
     para_cl_enable_warnings(${test_target})
 
-    gtest_discover_tests(${test_target})
+    gtest_discover_tests(${test_target} PROPERTIES TIMEOUT 10)
 endforeach()

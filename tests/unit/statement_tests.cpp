@@ -613,5 +613,222 @@ TEST(IfStatementTest, ReleasesConditionAndBodyThroughBasePointer) {
     EXPECT_EQ(destruction_count, 2);
 }
 
+TEST(WhileStatementTest, ZeroConditionSkipsBodyAndItsErrors) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const WhileStatement statement{std::make_unique<NumberExpression>(0),
+        std::make_unique<PrintStatement>(
+            std::make_unique<BinaryExpression>(BinaryOperator::Div,
+                std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0)))};
+
+    EXPECT_NO_THROW(statement.execute(context));
+    EXPECT_TRUE(output.str().empty());
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(WhileStatementTest, ReevaluatesConditionAfterEachBodyExecution) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("x", 3);
+    std::vector<std::unique_ptr<Statement>> body;
+    body.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x",
+            std::make_unique<BinaryExpression>(BinaryOperator::Sub,
+                std::make_unique<VariableExpression>("x"), std::make_unique<NumberExpression>(1)))));
+    const WhileStatement loop{
+        std::make_unique<BinaryExpression>(BinaryOperator::Greater,
+            std::make_unique<VariableExpression>("x"), std::make_unique<NumberExpression>(0)),
+        std::make_unique<BlockStatement>(std::move(body))};
+    const Statement& statement = loop;
+
+    statement.execute(context);
+
+    EXPECT_EQ(context.get_variable("x"), 0);
+    EXPECT_EQ(output.str(), "3\n2\n1\n");
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(WhileStatementTest, EvaluatesConditionOncePerIterationAndOnceToStop) {
+    std::istringstream input{"2 -1 0 99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const WhileStatement statement{std::make_unique<InputExpression>(),
+        std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+
+    statement.execute(context);
+
+    EXPECT_EQ(output.str(), "42\n42\n");
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
+TEST(WhileStatementTest, DoesNotCreateScopeForConditionOrSingleStatementBody) {
+    std::istringstream input{"2 -1 0"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const WhileStatement statement{
+        std::make_unique<AssignmentExpression>("condition", std::make_unique<InputExpression>()),
+        std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("last",
+                std::make_unique<VariableExpression>("condition")))};
+
+    statement.execute(context);
+
+    EXPECT_EQ(context.get_variable("condition"), 0);
+    EXPECT_EQ(context.get_variable("last"), -1);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(WhileStatementTest, ConditionErrorPreventsBodyExecution) {
+    std::istringstream input{"99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const WhileStatement statement{std::make_unique<VariableExpression>("missing"),
+        std::make_unique<ExpressionStatement>(std::make_unique<InputExpression>())};
+
+    EXPECT_THROW(statement.execute(context), std::runtime_error);
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
+TEST(WhileStatementTest, BodyErrorStopsLoopAndUnwindsIterationScope) {
+    std::istringstream input{"1 1 0 99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("global", 42);
+    std::vector<std::unique_ptr<Statement>> body;
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
+    body.push_back(std::make_unique<PrintStatement>(
+        std::make_unique<BinaryExpression>(BinaryOperator::Div,
+            std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0))));
+    body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("global", std::make_unique<NumberExpression>(99))));
+    const WhileStatement statement{std::make_unique<InputExpression>(),
+        std::make_unique<BlockStatement>(std::move(body))};
+
+    EXPECT_THROW(statement.execute(context), std::domain_error);
+    EXPECT_EQ(InputExpression{}.evaluate(context), 1);
+    EXPECT_EQ(context.get_variable("global"), 42);
+    EXPECT_THROW(context.get_variable("local"), std::runtime_error);
+    EXPECT_TRUE(output.str().empty());
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(WhileStatementTest, NestedLoopsUpdateOuterStateAndRemoveLocalCounters) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    context.set_variable("x", 2);
+    context.set_variable("count", 0);
+    std::vector<std::unique_ptr<Statement>> inner_body;
+    inner_body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("count",
+            std::make_unique<BinaryExpression>(BinaryOperator::Add,
+                std::make_unique<VariableExpression>("count"), std::make_unique<NumberExpression>(1)))));
+    inner_body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("y",
+            std::make_unique<BinaryExpression>(BinaryOperator::Sub,
+                std::make_unique<VariableExpression>("y"), std::make_unique<NumberExpression>(1)))));
+
+    std::vector<std::unique_ptr<Statement>> outer_body;
+    outer_body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("y", std::make_unique<NumberExpression>(3))));
+    outer_body.push_back(std::make_unique<WhileStatement>(
+        std::make_unique<BinaryExpression>(BinaryOperator::Greater,
+            std::make_unique<VariableExpression>("y"), std::make_unique<NumberExpression>(0)),
+        std::make_unique<BlockStatement>(std::move(inner_body))));
+    outer_body.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x",
+            std::make_unique<BinaryExpression>(BinaryOperator::Sub,
+                std::make_unique<VariableExpression>("x"), std::make_unique<NumberExpression>(1)))));
+    const WhileStatement statement{
+        std::make_unique<BinaryExpression>(BinaryOperator::Greater,
+            std::make_unique<VariableExpression>("x"), std::make_unique<NumberExpression>(0)),
+        std::make_unique<BlockStatement>(std::move(outer_body))};
+
+    statement.execute(context);
+
+    EXPECT_EQ(context.get_variable("count"), 6);
+    EXPECT_EQ(context.get_variable("x"), 0);
+    EXPECT_THROW(context.get_variable("y"), std::runtime_error);
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(WhileStatementTest, ExecutesFibonacciExampleFromTask) {
+    for (const auto& [iterations, expected] : {
+             std::pair{0, 1}, std::pair{1, 1}, std::pair{2, 2},
+             std::pair{10, 89}, std::pair{20, 10946}}) {
+        SCOPED_TRACE(iterations);
+        std::istringstream input{std::format("{}", iterations)};
+        std::ostringstream output;
+        RuntimeContext context{input, output};
+        const ExpressionStatement initialize_first{
+            std::make_unique<AssignmentExpression>("fst", std::make_unique<NumberExpression>(0))};
+        const ExpressionStatement initialize_second{
+            std::make_unique<AssignmentExpression>("snd", std::make_unique<NumberExpression>(1))};
+        const ExpressionStatement initialize_iterations{
+            std::make_unique<AssignmentExpression>("iters", std::make_unique<InputExpression>())};
+
+        std::vector<std::unique_ptr<Statement>> body;
+        body.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("tmp", std::make_unique<VariableExpression>("fst"))));
+        body.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("fst", std::make_unique<VariableExpression>("snd"))));
+        body.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("snd",
+                std::make_unique<BinaryExpression>(BinaryOperator::Add,
+                    std::make_unique<VariableExpression>("snd"), std::make_unique<VariableExpression>("tmp")))));
+        body.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<AssignmentExpression>("iters",
+                std::make_unique<BinaryExpression>(BinaryOperator::Sub,
+                    std::make_unique<VariableExpression>("iters"), std::make_unique<NumberExpression>(1)))));
+        const WhileStatement loop{
+            std::make_unique<BinaryExpression>(BinaryOperator::Greater,
+                std::make_unique<VariableExpression>("iters"), std::make_unique<NumberExpression>(0)),
+            std::make_unique<BlockStatement>(std::move(body))};
+        const PrintStatement print{std::make_unique<VariableExpression>("snd")};
+
+        initialize_first.execute(context);
+        initialize_second.execute(context);
+        initialize_iterations.execute(context);
+        loop.execute(context);
+        print.execute(context);
+
+        EXPECT_EQ(output.str(), std::format("{}\n", expected));
+        EXPECT_EQ(context.get_variable("iters"), 0);
+        EXPECT_THROW(context.get_variable("tmp"), std::runtime_error);
+        EXPECT_THROW(context.leave_scope(), std::logic_error);
+    }
+}
+
+TEST(WhileStatementTest, RejectsNullConditionOrBodyAndReleasesOtherNode) {
+    int destruction_count = 0;
+    EXPECT_THROW((WhileStatement{nullptr,
+        std::make_unique<ExpressionStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count))}),
+        std::invalid_argument);
+    EXPECT_EQ(destruction_count, 1);
+    EXPECT_THROW((WhileStatement{
+        std::make_unique<DestructionProbeExpression>(destruction_count), nullptr}),
+        std::invalid_argument);
+    EXPECT_EQ(destruction_count, 2);
+    EXPECT_THROW((WhileStatement{nullptr, nullptr}), std::invalid_argument);
+}
+
+TEST(WhileStatementTest, ReleasesConditionAndBodyThroughBasePointer) {
+    int destruction_count = 0;
+    {
+        const std::unique_ptr<Statement> statement = std::make_unique<WhileStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count),
+            std::make_unique<ExpressionStatement>(
+                std::make_unique<DestructionProbeExpression>(destruction_count)));
+        EXPECT_EQ(destruction_count, 0);
+    }
+
+    EXPECT_EQ(destruction_count, 2);
+}
+
 } // namespace
 } // namespace ParaCL
