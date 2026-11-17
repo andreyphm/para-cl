@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <utility>
 #include <string>
 
@@ -25,7 +26,7 @@ private:
     void skip_spaces_and_comments();
     Token read_number();
     Token read_identifier_or_keyword();
-    Token read_operator();
+    std::optional<Token> try_read_operator();
 };
 
 } // namespace ParaCL

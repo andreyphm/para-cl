@@ -32,7 +32,11 @@ Token Lexer::next_token() {
         return read_identifier_or_keyword();
     }
 
-    return read_operator();
+    if (const auto token = try_read_operator()) {
+        return *token;
+    }
+
+    throw std::runtime_error(std::format("Unknown symbol at line {}, column {}", position_.line, position_.column));
 }
 
 void Lexer::advance() {
@@ -99,7 +103,7 @@ Token Lexer::read_identifier_or_keyword() {
     return {TokenKind::Identifier, name, start_position};
 }
 
-Token Lexer::read_operator() {
+std::optional<Token> Lexer::try_read_operator() {
     const SourcePosition start_position = position_;
     const Detail::TokenSpelling* best_match = nullptr;
 
@@ -110,14 +114,14 @@ Token Lexer::read_operator() {
     }
 
     if (!best_match) {
-        throw std::runtime_error(std::format("Unknown symbol at line {}, column {}", start_position.line, start_position.column));
+        return std::nullopt;
     }
 
     for (std::size_t i = 0; i < best_match->text.size(); ++i) {
         advance();
     }
 
-    return {best_match->kind, std::string(best_match->text), start_position};
+    return Token{best_match->kind, std::string(best_match->text), start_position};
 }
 
 } // namespace ParaCL
