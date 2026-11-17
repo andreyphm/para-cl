@@ -121,6 +121,12 @@ IfStatement::IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<
     }
 }
 
+void IfStatement::execute(RuntimeContext& context) const {
+    if (condition_->evaluate(context)) {
+        body_->execute(context);
+    }
+}
+
 WhileStatement::WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
     : condition_(std::move(condition)), body_(std::move(body)) {
     if (!condition_) {
@@ -128,6 +134,26 @@ WhileStatement::WhileStatement(std::unique_ptr<Expression> condition, std::uniqu
     }
     if (!body_) {
         throw std::invalid_argument("'while' body must not be null");
+    }
+}
+
+void WhileStatement::execute(RuntimeContext& context) const {
+    while (condition_->evaluate(context)) {
+        body_->execute(context);
+    }
+}
+
+Program::Program(std::vector<std::unique_ptr<Statement>> statements) : statements_(std::move(statements)) {
+    for (const auto& statement : statements_) {
+        if (!statement) {
+            throw std::invalid_argument("Statement must not be null");
+        }
+    }
+}
+
+void Program::execute(RuntimeContext& context) const {
+    for (const auto& statement : statements_) {
+        statement->execute(context);
     }
 }
 

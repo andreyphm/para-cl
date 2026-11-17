@@ -24,6 +24,7 @@ private:
     bool at_end() const;
     unsigned char current_symbol() const;
     void skip_spaces_and_comments();
+
     Token read_number();
     Token read_identifier_or_keyword();
     std::optional<Token> try_read_operator();

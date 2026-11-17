@@ -40,4 +40,9 @@ const int* RuntimeContext::find_variable_value(const std::string& name) const {
     return nullptr;
 }
 
+void RuntimeContext::create_variable(const std::string& name, const int value) {
+    auto& current_scope = scopes_.back();
+    current_scope.emplace(name, value);
+}
+
 } // namespace ParaCL

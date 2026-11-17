@@ -830,5 +830,79 @@ TEST(WhileStatementTest, ReleasesConditionAndBodyThroughBasePointer) {
     EXPECT_EQ(destruction_count, 2);
 }
 
+TEST(ProgramTest, AllowsEmptyProgram) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const Program program{std::vector<std::unique_ptr<Statement>>{}};
+
+    EXPECT_NO_THROW(program.execute(context));
+    EXPECT_TRUE(output.str().empty());
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(ProgramTest, ExecutesInOrderAndKeepsVariablesInGlobalScope) {
+    std::istringstream input{"17 23"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<InputExpression>())));
+    statements.push_back(std::make_unique<PrintStatement>(
+        std::make_unique<VariableExpression>("x")));
+    const Program program{std::move(statements)};
+
+    program.execute(context);
+    EXPECT_EQ(context.get_variable("x"), 17);
+    program.execute(context);
+    EXPECT_EQ(context.get_variable("x"), 23);
+    EXPECT_EQ(output.str(), "17\n23\n");
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(ProgramTest, StopsOnErrorWithoutRollingBackEarlierStatements) {
+    std::istringstream input;
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(7))));
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<VariableExpression>("missing")));
+    statements.push_back(std::make_unique<PrintStatement>(
+        std::make_unique<NumberExpression>(99)));
+    const Program program{std::move(statements)};
+
+    EXPECT_THROW(program.execute(context), std::runtime_error);
+    EXPECT_EQ(context.get_variable("x"), 7);
+    EXPECT_TRUE(output.str().empty());
+    EXPECT_THROW(context.leave_scope(), std::logic_error);
+}
+
+TEST(ProgramTest, RejectsNullStatementAndReleasesOwnedNodes) {
+    int destruction_count = 0;
+    std::vector<std::unique_ptr<Statement>> statements;
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<DestructionProbeExpression>(destruction_count)));
+    statements.push_back(nullptr);
+    statements.push_back(std::make_unique<ExpressionStatement>(
+        std::make_unique<DestructionProbeExpression>(destruction_count)));
+
+    EXPECT_THROW((Program{std::move(statements)}), std::invalid_argument);
+    EXPECT_EQ(destruction_count, 2);
+}
+
+TEST(ProgramTest, ReleasesOwnedStatementsOnDestruction) {
+    int destruction_count = 0;
+    {
+        std::vector<std::unique_ptr<Statement>> statements;
+        statements.push_back(std::make_unique<ExpressionStatement>(
+            std::make_unique<DestructionProbeExpression>(destruction_count)));
+        const Program program{std::move(statements)};
+        EXPECT_EQ(destruction_count, 0);
+    }
+    EXPECT_EQ(destruction_count, 1);
+}
+
 } // namespace
 } // namespace ParaCL

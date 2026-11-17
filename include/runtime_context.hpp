@@ -19,23 +19,15 @@ public:
     int get_variable(const std::string& name) const;
     void set_variable(const std::string& name, int value);
 
-    void enter_scope() {
-        scopes_.emplace_back();
-    }
+    void enter_scope() { scopes_.emplace_back(); }
     void leave_scope();
 
 private:
     std::vector<std::unordered_map<std::string, int>> scopes_{1};
 
     const int* find_variable_value(const std::string& name) const;
-    int* find_variable_value(const std::string& name) {
-        return const_cast<int*>(std::as_const(*this).find_variable_value(name));
-    }
-
-    void create_variable(const std::string& name, const int value) {
-        auto& current_scope = scopes_.back();
-        current_scope.emplace(name, value);
-    }
+    int* find_variable_value(const std::string& name) { return const_cast<int*>(std::as_const(*this).find_variable_value(name)); }
+    void create_variable(const std::string& name, const int value);
 };
 
 class ScopeOwner {
