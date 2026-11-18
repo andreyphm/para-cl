@@ -1,0 +1,8 @@
+a @Assign @Input @StatementEnd
+b @Assign @Input @StatementEnd
+@While @GroupBegin b @NotEqual 0 @GroupEnd @BlockBegin
+    remainder @Assign a @Minus @GroupBegin a @Div b @GroupEnd @Mul b @StatementEnd
+    a @Assign b @StatementEnd
+    b @Assign remainder @StatementEnd
+@BlockEnd
+@Output a @StatementEnd

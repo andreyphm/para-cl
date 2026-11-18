@@ -1,0 +1,11 @@
+i @Assign 1 @StatementEnd
+total @Assign 0 @StatementEnd
+@While @GroupBegin i @LessEqual 3 @GroupEnd @BlockBegin
+    j @Assign 1 @StatementEnd
+    @While @GroupBegin j @LessEqual 3 @GroupEnd @BlockBegin
+        total @Assign total @Plus i @Mul j @StatementEnd
+        j @Assign j @Plus 1 @StatementEnd
+    @BlockEnd
+    i @Assign i @Plus 1 @StatementEnd
+@BlockEnd
+@Output total @StatementEnd

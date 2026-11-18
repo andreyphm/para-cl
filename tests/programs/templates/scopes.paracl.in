@@ -1,0 +1,10 @@
+global @Assign 0 @StatementEnd
+@While @GroupBegin global @Less 3 @GroupEnd @BlockBegin
+    local @Assign 0 @StatementEnd
+    @BlockBegin
+        local @Assign local @Plus 1 @StatementEnd
+    @BlockEnd
+    @Output local @StatementEnd
+    global @Assign global @Plus 1 @StatementEnd
+@BlockEnd
+@Output global @StatementEnd

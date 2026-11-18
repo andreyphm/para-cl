@@ -1,0 +1,7 @@
+n @Assign @Input @StatementEnd
+result @Assign 1 @StatementEnd
+@While @GroupBegin n @Greater 1 @GroupEnd @BlockBegin
+    result @Assign result @Mul n @StatementEnd
+    n @Assign n @Minus 1 @StatementEnd
+@BlockEnd
+@Output result @StatementEnd

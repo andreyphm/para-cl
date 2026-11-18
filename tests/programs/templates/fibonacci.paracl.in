@@ -1,0 +1,10 @@
+fst @Assign 0 @StatementEnd
+snd @Assign 1 @StatementEnd
+iters @Assign @Input @StatementEnd
+@While @GroupBegin iters @Greater 0 @GroupEnd @BlockBegin
+    tmp @Assign fst @StatementEnd
+    fst @Assign snd @StatementEnd
+    snd @Assign snd @Plus tmp @StatementEnd
+    iters @Assign iters @Minus 1 @StatementEnd
+@BlockEnd
+@Output snd @StatementEnd

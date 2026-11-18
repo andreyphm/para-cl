@@ -66,6 +66,65 @@ Parser::Parser(std::vector<Token> tokens) : tokens_(std::move(tokens)) {
     }
 }
 
+std::unique_ptr<Program> Parser::parse_program() {
+    std::vector<std::unique_ptr<Statement>> statements;
+    while (current_token().kind != TokenKind::EndOfFile) {
+        statements.push_back(parse_statement());
+    }
+    return std::make_unique<Program>(std::move(statements));
+}
+
+std::unique_ptr<Statement> Parser::parse_statement() {
+    switch (current_token().kind) {
+        case TokenKind::BlockBegin: return parse_block();
+        case TokenKind::If: return parse_if();
+        case TokenKind::While: return parse_while();
+        case TokenKind::Output: return parse_output();
+        default: return parse_expression_statement();
+    }
+}
+
+std::unique_ptr<Statement> Parser::parse_block() {
+    consume(TokenKind::BlockBegin);
+    std::vector<std::unique_ptr<Statement>> statements;
+    while (current_token().kind != TokenKind::BlockEnd && current_token().kind != TokenKind::EndOfFile) {
+        statements.push_back(parse_statement());
+    }
+    consume(TokenKind::BlockEnd);
+    return std::make_unique<BlockStatement>(std::move(statements));
+}
+
+std::unique_ptr<Statement> Parser::parse_if() {
+    consume(TokenKind::If);
+    consume(TokenKind::GroupBegin);
+    auto condition = parse_expression();
+    consume(TokenKind::GroupEnd);
+    auto body = parse_statement();
+    return std::make_unique<IfStatement>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::parse_while() {
+    consume(TokenKind::While);
+    consume(TokenKind::GroupBegin);
+    auto condition = parse_expression();
+    consume(TokenKind::GroupEnd);
+    auto body = parse_statement();
+    return std::make_unique<WhileStatement>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::parse_output() {
+    consume(TokenKind::Output);
+    auto expression = parse_expression();
+    consume(TokenKind::StatementEnd);
+    return std::make_unique<OutputStatement>(std::move(expression));
+}
+
+std::unique_ptr<Statement> Parser::parse_expression_statement() {
+    auto expression = parse_expression();
+    consume(TokenKind::StatementEnd);
+    return std::make_unique<ExpressionStatement>(std::move(expression));
+}
+
 std::unique_ptr<Expression> Parser::parse_expression() {
     return parse_assignment();
 }
