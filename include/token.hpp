@@ -30,11 +30,11 @@ enum class TokenKind {
     LogicalAnd,
     LogicalOr,
 
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    Semicolon,
+    GroupBegin,
+    GroupEnd,
+    BlockBegin,
+    BlockEnd,
+    StatementEnd,
 
     EndOfFile,
 };

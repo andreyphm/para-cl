@@ -165,8 +165,8 @@ TEST(LexerTest, RecognizesEveryOperatorAndDelimiterAtEndOfSource) {
         TokenKind::Assign, TokenKind::Equal, TokenKind::NotEqual,
         TokenKind::Less, TokenKind::LessEqual, TokenKind::Greater,
         TokenKind::GreaterEqual, TokenKind::LogicalAnd, TokenKind::LogicalOr,
-        TokenKind::Input, TokenKind::LeftParen, TokenKind::RightParen,
-        TokenKind::LeftBrace, TokenKind::RightBrace, TokenKind::Semicolon,
+        TokenKind::Input, TokenKind::GroupBegin, TokenKind::GroupEnd,
+        TokenKind::BlockBegin, TokenKind::BlockEnd, TokenKind::StatementEnd,
     };
     for (const TokenKind kind : kinds) {
         const std::string text = spelling_for(kind);
@@ -188,13 +188,13 @@ TEST(LexerTest, ReadsOperatorsBetweenOtherTokenKindsAcrossLines) {
         {TokenKind::Identifier, "x", {1, 0}},
         {TokenKind::Assign, spelling_for(TokenKind::Assign), {1, 0}},
         {TokenKind::Input, spelling_for(TokenKind::Input), {1, 0}},
-        {TokenKind::Semicolon, spelling_for(TokenKind::Semicolon), {1, 0}},
+        {TokenKind::StatementEnd, spelling_for(TokenKind::StatementEnd), {1, 0}},
         {TokenKind::Output, spelling_for(TokenKind::Output), {2, 0}},
-        {TokenKind::LeftParen, spelling_for(TokenKind::LeftParen), {2, 0}},
+        {TokenKind::GroupBegin, spelling_for(TokenKind::GroupBegin), {2, 0}},
         {TokenKind::Minus, spelling_for(TokenKind::Minus), {2, 0}},
         {TokenKind::Number, "42", {2, 0}},
-        {TokenKind::RightParen, spelling_for(TokenKind::RightParen), {2, 0}},
-        {TokenKind::Semicolon, spelling_for(TokenKind::Semicolon), {2, 0}},
+        {TokenKind::GroupEnd, spelling_for(TokenKind::GroupEnd), {2, 0}},
+        {TokenKind::StatementEnd, spelling_for(TokenKind::StatementEnd), {2, 0}},
     };
     std::ostringstream source;
     std::size_t line = 1;
