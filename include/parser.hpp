@@ -27,6 +27,13 @@ private:
     std::unique_ptr<Statement> parse_statement();
     std::unique_ptr<Expression> parse_expression();
     std::unique_ptr<Expression> parse_assignment();
+    std::unique_ptr<Expression> parse_logical_or();
+    std::unique_ptr<Expression> parse_logical_and();
+    std::unique_ptr<Expression> parse_equality();
+    std::unique_ptr<Expression> parse_relation();
+    std::unique_ptr<Expression> parse_addsub();
+    std::unique_ptr<Expression> parse_muldiv();
+    std::unique_ptr<Expression> parse_unary();
     std::unique_ptr<Expression> parse_primary();
     std::unique_ptr<Expression> parse_number();
     std::unique_ptr<Expression> parse_identifier();

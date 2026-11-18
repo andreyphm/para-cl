@@ -3,11 +3,57 @@
 #include <charconv>
 #include <format>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <system_error>
 #include <utility>
 
 namespace ParaCL {
+namespace {
+
+std::optional<BinaryOperator> relation_operator_for(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Less: return BinaryOperator::Less;
+        case TokenKind::LessEqual: return BinaryOperator::LessEqual;
+        case TokenKind::Greater: return BinaryOperator::Greater;
+        case TokenKind::GreaterEqual: return BinaryOperator::GreaterEqual;
+        default: return std::nullopt;
+    }
+}
+
+std::optional<BinaryOperator> equality_operator_for(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Equal: return BinaryOperator::Equal;
+        case TokenKind::NotEqual: return BinaryOperator::NotEqual;
+        default: return std::nullopt;
+    }
+}
+
+std::optional<BinaryOperator> addsub_operator_for(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Plus: return BinaryOperator::Add;
+        case TokenKind::Minus: return BinaryOperator::Sub;
+        default: return std::nullopt;
+    }
+}
+
+std::optional<BinaryOperator> muldiv_operator_for(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Mul: return BinaryOperator::Mul;
+        case TokenKind::Div: return BinaryOperator::Div;
+        default: return std::nullopt;
+    }
+}
+
+std::optional<UnaryOperator> unary_operator_for(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Plus: return UnaryOperator::Plus;
+        case TokenKind::Minus: return UnaryOperator::Minus;
+        default: return std::nullopt;
+    }
+}
+
+} // namespace
 
 Parser::Parser(std::vector<Token> tokens) : tokens_(std::move(tokens)) {
     if (tokens_.empty() || tokens_.back().kind != TokenKind::EndOfFile) {
@@ -31,8 +77,74 @@ std::unique_ptr<Expression> Parser::parse_assignment() {
         auto expression = parse_assignment();
         return std::make_unique<AssignmentExpression>(std::move(identifier.text), std::move(expression));
     }
+    return parse_logical_or();
+}
 
-    // Will be replaced with parse_logical_or() when this priority level is implemented.
+std::unique_ptr<Expression> Parser::parse_logical_or() {
+    auto first_expression = parse_logical_and();
+    while (current_token().kind == TokenKind::LogicalOr) {
+        advance();
+        auto next_expression = parse_logical_and();
+        first_expression = std::make_unique<BinaryExpression>(BinaryOperator::LogicalOr, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_logical_and() {
+    auto first_expression = parse_equality();
+    while (current_token().kind == TokenKind::LogicalAnd) {
+        advance();
+        auto next_expression = parse_equality();
+        first_expression = std::make_unique<BinaryExpression>(BinaryOperator::LogicalAnd, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_equality() {
+    auto first_expression = parse_relation();
+    while (const auto operation = equality_operator_for(current_token().kind)) {
+        advance();
+        auto next_expression = parse_relation();
+        first_expression = std::make_unique<BinaryExpression>(*operation, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_relation() {
+    auto first_expression = parse_addsub();
+    while (const auto operation = relation_operator_for(current_token().kind)) {
+        advance();
+        auto next_expression = parse_addsub();
+        first_expression = std::make_unique<BinaryExpression>(*operation, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_addsub() {
+    auto first_expression = parse_muldiv();
+    while (const auto operation = addsub_operator_for(current_token().kind)) {
+        advance();
+        auto next_expression = parse_muldiv();
+        first_expression = std::make_unique<BinaryExpression>(*operation, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_muldiv() {
+    auto first_expression = parse_unary();
+    while (const auto operation = muldiv_operator_for(current_token().kind)) {
+        advance();
+        auto next_expression = parse_unary();
+        first_expression = std::make_unique<BinaryExpression>(*operation, std::move(first_expression), std::move(next_expression));
+    }
+    return first_expression;
+}
+
+std::unique_ptr<Expression> Parser::parse_unary() {
+    if (const auto operation = unary_operator_for(current_token().kind)) {
+        advance();
+        return std::make_unique<UnaryExpression>(*operation, parse_primary());
+    }
     return parse_primary();
 }
 
