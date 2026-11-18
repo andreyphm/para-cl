@@ -11,6 +11,7 @@ include(cmake/warnings.cmake)
 add_library(para_cl_core STATIC
     source/ast.cpp
     source/runtime_context.cpp
+    source/token.cpp
     source/lexer.cpp
     source/parser.cpp)
 target_include_directories(para_cl_core PUBLIC ${PROJECT_SOURCE_DIR}/include)

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace ParaCL {
 
@@ -38,6 +39,8 @@ enum class TokenKind {
 
     EndOfFile,
 };
+
+std::string_view token_kind_name(TokenKind kind);
 
 struct SourcePosition {
     std::size_t line;
