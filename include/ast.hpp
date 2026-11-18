@@ -99,9 +99,9 @@ private:
     std::unique_ptr<Expression> expression_;
 };
 
-class PrintStatement : public Statement {
+class OutputStatement : public Statement {
 public:
-    explicit PrintStatement(std::unique_ptr<Expression> expression);
+    explicit OutputStatement(std::unique_ptr<Expression> expression);
     void execute(RuntimeContext& context) const override;
 private:
     std::unique_ptr<Expression> expression_;

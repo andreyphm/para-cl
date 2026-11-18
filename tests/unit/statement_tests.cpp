@@ -134,14 +134,14 @@ TEST(ExpressionStatementTest, DestroysOwnedExpressionThroughBaseStatementPointer
     EXPECT_EQ(destruction_count, 1);
 }
 
-TEST(PrintStatementTest, PrintsIntValuesWithNewlineThroughBaseInterface) {
+TEST(OutputStatementTest, PrintsIntValuesWithNewlineThroughBaseInterface) {
     for (const int value : {0, 42, -7,
              std::numeric_limits<int>::min(), std::numeric_limits<int>::max()}) {
         SCOPED_TRACE(value);
         std::istringstream input;
         std::ostringstream output;
         RuntimeContext context{input, output};
-        const PrintStatement print{std::make_unique<NumberExpression>(value)};
+        const OutputStatement print{std::make_unique<NumberExpression>(value)};
         const Statement& statement = print;
 
         statement.execute(context);
@@ -150,11 +150,11 @@ TEST(PrintStatementTest, PrintsIntValuesWithNewlineThroughBaseInterface) {
     }
 }
 
-TEST(PrintStatementTest, EvaluatesInputOnceOnEachExecution) {
+TEST(OutputStatementTest, EvaluatesInputOnceOnEachExecution) {
     std::istringstream input{"10 -3 99"};
     std::ostringstream output;
     RuntimeContext context{input, output};
-    const PrintStatement statement{std::make_unique<InputExpression>()};
+    const OutputStatement statement{std::make_unique<InputExpression>()};
 
     statement.execute(context);
     statement.execute(context);
@@ -163,11 +163,11 @@ TEST(PrintStatementTest, EvaluatesInputOnceOnEachExecution) {
     EXPECT_EQ(InputExpression{}.evaluate(context), 99);
 }
 
-TEST(PrintStatementTest, PrintsAssignmentResultAndPreservesItsSideEffect) {
+TEST(OutputStatementTest, PrintsAssignmentResultAndPreservesItsSideEffect) {
     std::istringstream input;
     std::ostringstream output;
     RuntimeContext context{input, output};
-    const PrintStatement statement{
+    const OutputStatement statement{
         std::make_unique<AssignmentExpression>("x",
             std::make_unique<BinaryExpression>(BinaryOperator::Add,
                 std::make_unique<NumberExpression>(3),
@@ -179,7 +179,7 @@ TEST(PrintStatementTest, PrintsAssignmentResultAndPreservesItsSideEffect) {
     EXPECT_EQ(context.get_variable("x"), 5);
 }
 
-TEST(PrintStatementTest, UsesVariablesAndOutputOfProvidedContext) {
+TEST(OutputStatementTest, UsesVariablesAndOutputOfProvidedContext) {
     std::istringstream first_input;
     std::istringstream second_input;
     std::ostringstream first_output;
@@ -188,7 +188,7 @@ TEST(PrintStatementTest, UsesVariablesAndOutputOfProvidedContext) {
     RuntimeContext second{second_input, second_output};
     first.set_variable("x", 3);
     second.set_variable("x", 7);
-    const PrintStatement statement{std::make_unique<VariableExpression>("x")};
+    const OutputStatement statement{std::make_unique<VariableExpression>("x")};
 
     statement.execute(first);
     statement.execute(second);
@@ -199,12 +199,12 @@ TEST(PrintStatementTest, UsesVariablesAndOutputOfProvidedContext) {
     EXPECT_EQ(second_output.str(), "7\n");
 }
 
-TEST(PrintStatementTest, DoesNotPrintWhenExpressionFails) {
+TEST(OutputStatementTest, DoesNotPrintWhenExpressionFails) {
     std::istringstream input;
     std::ostringstream output;
     RuntimeContext context{input, output};
-    const PrintStatement unknown{std::make_unique<VariableExpression>("missing")};
-    const PrintStatement division{
+    const OutputStatement unknown{std::make_unique<VariableExpression>("missing")};
+    const OutputStatement division{
         std::make_unique<BinaryExpression>(BinaryOperator::Div,
             std::make_unique<NumberExpression>(1),
             std::make_unique<NumberExpression>(0))};
@@ -215,16 +215,16 @@ TEST(PrintStatementTest, DoesNotPrintWhenExpressionFails) {
     EXPECT_TRUE(output.str().empty());
 }
 
-TEST(PrintStatementTest, RejectsNullExpression) {
-    EXPECT_THROW((PrintStatement{nullptr}), std::invalid_argument);
+TEST(OutputStatementTest, RejectsNullExpression) {
+    EXPECT_THROW((OutputStatement{nullptr}), std::invalid_argument);
 }
 
-TEST(PrintStatementTest, ReportsOutputStreamFailure) {
+TEST(OutputStatementTest, ReportsOutputStreamFailure) {
     std::istringstream input;
     std::ostringstream output;
     output.setstate(std::ios::badbit);
     RuntimeContext context{input, output};
-    const PrintStatement statement{std::make_unique<NumberExpression>(42)};
+    const OutputStatement statement{std::make_unique<NumberExpression>(42)};
 
     EXPECT_THROW(statement.execute(context), std::runtime_error);
 }
@@ -249,32 +249,32 @@ private:
     std::size_t remaining_;
 };
 
-TEST(PrintStatementTest, ReportsFailureWhileWritingNumber) {
+TEST(OutputStatementTest, ReportsFailureWhileWritingNumber) {
     std::istringstream input;
     LimitedOutputBuffer buffer{0};
     std::ostream output{&buffer};
     RuntimeContext context{input, output};
-    const PrintStatement statement{std::make_unique<NumberExpression>(42)};
+    const OutputStatement statement{std::make_unique<NumberExpression>(42)};
 
     EXPECT_THROW(statement.execute(context), std::runtime_error);
     EXPECT_TRUE(output.fail());
 }
 
-TEST(PrintStatementTest, ReportsFailureWhileWritingNewline) {
+TEST(OutputStatementTest, ReportsFailureWhileWritingNewline) {
     std::istringstream input;
     LimitedOutputBuffer buffer{2};
     std::ostream output{&buffer};
     RuntimeContext context{input, output};
-    const PrintStatement statement{std::make_unique<NumberExpression>(42)};
+    const OutputStatement statement{std::make_unique<NumberExpression>(42)};
 
     EXPECT_THROW(statement.execute(context), std::runtime_error);
     EXPECT_TRUE(output.fail());
 }
 
-TEST(PrintStatementTest, DestroysOwnedExpressionThroughBaseStatementPointer) {
+TEST(OutputStatementTest, DestroysOwnedExpressionThroughBaseStatementPointer) {
     int destruction_count = 0;
     {
-        const std::unique_ptr<Statement> statement = std::make_unique<PrintStatement>(
+        const std::unique_ptr<Statement> statement = std::make_unique<OutputStatement>(
             std::make_unique<DestructionProbeExpression>(destruction_count));
         EXPECT_EQ(destruction_count, 0);
     }
@@ -308,7 +308,7 @@ TEST(BlockStatementTest, ExecutesStatementsInOrderAndRemovesLocalVariables) {
             std::make_unique<BinaryExpression>(BinaryOperator::Add,
                 std::make_unique<VariableExpression>("x"),
                 std::make_unique<NumberExpression>(2)))));
-    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    statements.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("x")));
     const BlockStatement block{std::move(statements)};
 
     block.execute(context);
@@ -341,7 +341,7 @@ TEST(BlockStatementTest, NestedBlockCanReadAndUpdateEnclosingBlockVariable) {
     std::ostringstream output;
     RuntimeContext context{input, output};
     std::vector<std::unique_ptr<Statement>> inner;
-    inner.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    inner.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("x")));
     inner.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(4))));
     inner.push_back(std::make_unique<ExpressionStatement>(
@@ -351,7 +351,7 @@ TEST(BlockStatementTest, NestedBlockCanReadAndUpdateEnclosingBlockVariable) {
     outer.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(2))));
     outer.push_back(std::make_unique<BlockStatement>(std::move(inner)));
-    outer.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    outer.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("x")));
     const BlockStatement block{std::move(outer)};
 
     block.execute(context);
@@ -370,10 +370,10 @@ TEST(BlockStatementTest, ErrorStopsExecutionAndRemovesScopeWithoutUndoingEarlier
     std::vector<std::unique_ptr<Statement>> statements;
     statements.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
-    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("local")));
+    statements.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("local")));
     statements.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(3))));
-    statements.push_back(std::make_unique<PrintStatement>(
+    statements.push_back(std::make_unique<OutputStatement>(
         std::make_unique<BinaryExpression>(BinaryOperator::Div,
             std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0))));
     statements.push_back(std::make_unique<ExpressionStatement>(
@@ -417,7 +417,7 @@ TEST(BlockStatementTest, CreatesFreshLocalScopeOnEveryExecution) {
     std::vector<std::unique_ptr<Statement>> statements;
     statements.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("local", std::make_unique<InputExpression>())));
-    statements.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("local")));
+    statements.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("local")));
     const BlockStatement block{std::move(statements)};
 
     block.execute(context);
@@ -454,7 +454,7 @@ TEST(BlockStatementTest, DestroysOwnedStatementsThroughBasePointer) {
         std::vector<std::unique_ptr<Statement>> statements;
         statements.push_back(std::make_unique<ExpressionStatement>(
             std::make_unique<DestructionProbeExpression>(destruction_count)));
-        statements.push_back(std::make_unique<PrintStatement>(
+        statements.push_back(std::make_unique<OutputStatement>(
             std::make_unique<DestructionProbeExpression>(destruction_count)));
         const std::unique_ptr<Statement> block = std::make_unique<BlockStatement>(std::move(statements));
         EXPECT_EQ(destruction_count, 0);
@@ -470,7 +470,7 @@ TEST(IfStatementTest, ExecutesBodyForNonzeroConditionThroughBaseInterface) {
         std::ostringstream output;
         RuntimeContext context{input, output};
         const IfStatement conditional{std::make_unique<NumberExpression>(value),
-            std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+            std::make_unique<OutputStatement>(std::make_unique<NumberExpression>(42))};
         const Statement& statement = conditional;
 
         statement.execute(context);
@@ -484,7 +484,7 @@ TEST(IfStatementTest, ZeroConditionSkipsBodyAndItsErrors) {
     std::ostringstream output;
     RuntimeContext context{input, output};
     const IfStatement statement{std::make_unique<NumberExpression>(0),
-        std::make_unique<PrintStatement>(
+        std::make_unique<OutputStatement>(
             std::make_unique<BinaryExpression>(BinaryOperator::Div,
                 std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0)))};
 
@@ -510,7 +510,7 @@ TEST(IfStatementTest, EvaluatesConditionOnceAndPreservesItsSideEffects) {
     RuntimeContext context{input, output};
     const IfStatement statement{
         std::make_unique<AssignmentExpression>("condition", std::make_unique<InputExpression>()),
-        std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("condition"))};
+        std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("condition"))};
 
     statement.execute(context);
     EXPECT_EQ(output.str(), "1\n");
@@ -526,7 +526,7 @@ TEST(IfStatementTest, ConditionErrorPreventsBodyExecution) {
     std::ostringstream output;
     RuntimeContext context{input, output};
     const IfStatement statement{std::make_unique<VariableExpression>("missing"),
-        std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+        std::make_unique<OutputStatement>(std::make_unique<NumberExpression>(42))};
 
     EXPECT_THROW(statement.execute(context), std::runtime_error);
     EXPECT_TRUE(output.str().empty());
@@ -618,7 +618,7 @@ TEST(WhileStatementTest, ZeroConditionSkipsBodyAndItsErrors) {
     std::ostringstream output;
     RuntimeContext context{input, output};
     const WhileStatement statement{std::make_unique<NumberExpression>(0),
-        std::make_unique<PrintStatement>(
+        std::make_unique<OutputStatement>(
             std::make_unique<BinaryExpression>(BinaryOperator::Div,
                 std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0)))};
 
@@ -633,7 +633,7 @@ TEST(WhileStatementTest, ReevaluatesConditionAfterEachBodyExecution) {
     RuntimeContext context{input, output};
     context.set_variable("x", 3);
     std::vector<std::unique_ptr<Statement>> body;
-    body.push_back(std::make_unique<PrintStatement>(std::make_unique<VariableExpression>("x")));
+    body.push_back(std::make_unique<OutputStatement>(std::make_unique<VariableExpression>("x")));
     body.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("x",
             std::make_unique<BinaryExpression>(BinaryOperator::Sub,
@@ -656,7 +656,7 @@ TEST(WhileStatementTest, EvaluatesConditionOncePerIterationAndOnceToStop) {
     std::ostringstream output;
     RuntimeContext context{input, output};
     const WhileStatement statement{std::make_unique<InputExpression>(),
-        std::make_unique<PrintStatement>(std::make_unique<NumberExpression>(42))};
+        std::make_unique<OutputStatement>(std::make_unique<NumberExpression>(42))};
 
     statement.execute(context);
 
@@ -700,7 +700,7 @@ TEST(WhileStatementTest, BodyErrorStopsLoopAndUnwindsIterationScope) {
     std::vector<std::unique_ptr<Statement>> body;
     body.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("local", std::make_unique<NumberExpression>(2))));
-    body.push_back(std::make_unique<PrintStatement>(
+    body.push_back(std::make_unique<OutputStatement>(
         std::make_unique<BinaryExpression>(BinaryOperator::Div,
             std::make_unique<NumberExpression>(1), std::make_unique<NumberExpression>(0))));
     body.push_back(std::make_unique<ExpressionStatement>(
@@ -788,7 +788,7 @@ TEST(WhileStatementTest, ExecutesFibonacciExampleFromTask) {
             std::make_unique<BinaryExpression>(BinaryOperator::Greater,
                 std::make_unique<VariableExpression>("iters"), std::make_unique<NumberExpression>(0)),
             std::make_unique<BlockStatement>(std::move(body))};
-        const PrintStatement print{std::make_unique<VariableExpression>("snd")};
+        const OutputStatement print{std::make_unique<VariableExpression>("snd")};
 
         initialize_first.execute(context);
         initialize_second.execute(context);
@@ -848,7 +848,7 @@ TEST(ProgramTest, ExecutesInOrderAndKeepsVariablesInGlobalScope) {
     std::vector<std::unique_ptr<Statement>> statements;
     statements.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<AssignmentExpression>("x", std::make_unique<InputExpression>())));
-    statements.push_back(std::make_unique<PrintStatement>(
+    statements.push_back(std::make_unique<OutputStatement>(
         std::make_unique<VariableExpression>("x")));
     const Program program{std::move(statements)};
 
@@ -869,7 +869,7 @@ TEST(ProgramTest, StopsOnErrorWithoutRollingBackEarlierStatements) {
         std::make_unique<AssignmentExpression>("x", std::make_unique<NumberExpression>(7))));
     statements.push_back(std::make_unique<ExpressionStatement>(
         std::make_unique<VariableExpression>("missing")));
-    statements.push_back(std::make_unique<PrintStatement>(
+    statements.push_back(std::make_unique<OutputStatement>(
         std::make_unique<NumberExpression>(99)));
     const Program program{std::move(statements)};
 

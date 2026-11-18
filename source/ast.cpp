@@ -83,13 +83,13 @@ ExpressionStatement::ExpressionStatement(std::unique_ptr<Expression> expression)
     }
 }
 
-PrintStatement::PrintStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
+OutputStatement::OutputStatement(std::unique_ptr<Expression> expression) : expression_(std::move(expression)) {
     if (!expression_) {
         throw std::invalid_argument("Expression must not be null");
     }
 }
 
-void PrintStatement::execute(RuntimeContext& context) const {
+void OutputStatement::execute(RuntimeContext& context) const {
     context.output << expression_->evaluate(context) << '\n';
     if (!context.output) {
         throw std::runtime_error("Failed to output int value");
