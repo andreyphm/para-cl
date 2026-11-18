@@ -18,6 +18,17 @@ bool is_identifier_symbol(unsigned char symbol) {
 
 } // namespace
 
+std::vector<Token> tokenize(std::string text) {
+    Lexer lexer{std::move(text)};
+    std::vector<Token> tokens;
+
+    do {
+        tokens.push_back(lexer.next_token());
+    } while (tokens.back().kind != TokenKind::EndOfFile);
+
+    return tokens;
+}
+
 Token Lexer::next_token() {
     skip_spaces_and_comments();
     if (at_end()) {

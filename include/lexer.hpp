@@ -4,6 +4,7 @@
 #include <optional>
 #include <utility>
 #include <string>
+#include <vector>
 
 #include "token.hpp"
 
@@ -29,5 +30,7 @@ private:
     Token read_identifier_or_keyword();
     std::optional<Token> try_read_operator();
 };
+
+std::vector<Token> tokenize(std::string text);
 
 } // namespace ParaCL

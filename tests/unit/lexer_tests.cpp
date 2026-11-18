@@ -88,6 +88,54 @@ TEST(LexerTest, ReturnsStableEndOfFileForEmptySource) {
     }
 }
 
+TEST(TokenizeTest, ReturnsOnlyEndOfFileForEmptyOrCommentOnlySource) {
+    const auto empty = tokenize("");
+    ASSERT_EQ(empty.size(), 1u);
+    expect_token(empty.front(), TokenKind::EndOfFile, "", 1, 1);
+
+    const auto comments = tokenize("// comment\n  // another\n");
+    ASSERT_EQ(comments.size(), 1u);
+    expect_token(comments.front(), TokenKind::EndOfFile, "", 3, 1);
+}
+
+TEST(TokenizeTest, PreservesTokenOrderTextPositionsAndFinalEndOfFile) {
+    const std::string source = std::format("007\nname\n{}\n{}\n{}\n{} // tail\n",
+        spelling_for(TokenKind::Input), spelling_for(TokenKind::GroupBegin),
+        spelling_for(TokenKind::GroupEnd), spelling_for(TokenKind::StatementEnd));
+    const auto tokens = tokenize(source);
+    ASSERT_EQ(tokens.size(), 7u);
+    expect_token(tokens[0], TokenKind::Number, "007", 1, 1);
+    expect_token(tokens[1], TokenKind::Identifier, "name", 2, 1);
+    expect_token(tokens[2], TokenKind::Input, spelling_for(TokenKind::Input), 3, 1);
+    expect_token(tokens[3], TokenKind::GroupBegin, spelling_for(TokenKind::GroupBegin), 4, 1);
+    expect_token(tokens[4], TokenKind::GroupEnd, spelling_for(TokenKind::GroupEnd), 5, 1);
+    expect_token(tokens[5], TokenKind::StatementEnd, spelling_for(TokenKind::StatementEnd), 6, 1);
+    expect_token(tokens[6], TokenKind::EndOfFile, "", 7, 1);
+}
+
+TEST(TokenizeTest, ReportsLexicalErrorAfterValidTokens) {
+    try {
+        tokenize(std::format("123\n{}", unknown_symbol()));
+        FAIL() << "Expected lexical error";
+    } catch (const std::runtime_error& error) {
+        EXPECT_NE(std::string(error.what()).find("line 2, column 1"), std::string::npos);
+    }
+}
+
+TEST(TokenizeTest, RetainsTokensAcrossVectorGrowth) {
+    constexpr std::size_t count = 4096;
+    std::ostringstream source;
+    for (std::size_t i = 0; i < count; ++i) {
+        source << i << '\n';
+    }
+    const auto tokens = tokenize(source.str());
+    ASSERT_EQ(tokens.size(), count + 1);
+    for (std::size_t i = 0; i < count; ++i) {
+        expect_token(tokens[i], TokenKind::Number, std::format("{}", i), i + 1, 1);
+    }
+    expect_token(tokens.back(), TokenKind::EndOfFile, "", count + 1, 1);
+}
+
 TEST(LexerTest, SkipsAllStandardWhitespace) {
     Lexer lexer{" \t\r\n\v\f"};
     expect_token(lexer.next_token(), TokenKind::EndOfFile, "", 2, 3);
