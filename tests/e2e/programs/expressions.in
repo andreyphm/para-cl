@@ -1,0 +1,22 @@
+@Output @Plus 2 @Plus 3 @Mul 4 @StatementEnd
+@Output @GroupBegin 2 @Plus 3 @GroupEnd @Mul 4 @StatementEnd
+@Output 20 @Minus 5 @Minus 3 @StatementEnd
+@Output 48 @Div 4 @Div 2 @StatementEnd
+@Output @Minus 8 @Div 3 @StatementEnd
+@Output @Minus 2 @Plus 3 @StatementEnd
+@Output @Minus @GroupBegin @Minus 3 @GroupEnd @StatementEnd
+@Output 2 @Plus 3 @Less 6 @StatementEnd
+@Output 2 @LessEqual 2 @StatementEnd
+@Output 3 @Greater 2 @StatementEnd
+@Output 3 @GreaterEqual 4 @StatementEnd
+@Output 2 @Equal 3 @Less 4 @StatementEnd
+@Output 4 @NotEqual 5 @StatementEnd
+@Output 3 @Less 2 @Less 1 @StatementEnd
+@Output 2 @Equal 2 @Equal 1 @StatementEnd
+@Output 2 @Equal 2 @LogicalAnd 3 @StatementEnd
+@Output 1 @LogicalOr 0 @LogicalAnd 0 @StatementEnd
+@Output x @Assign 0 @LogicalOr 5 @StatementEnd
+@Output x @StatementEnd
+a @Assign b @Assign 7 @StatementEnd
+@Output a @StatementEnd
+@Output b @StatementEnd

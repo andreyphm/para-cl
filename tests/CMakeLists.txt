@@ -4,5 +4,7 @@ foreach(test_target IN ITEMS ast_tests runtime_context_tests statement_tests lex
 
     para_cl_enable_warnings(${test_target})
 
-    gtest_discover_tests(${test_target} PROPERTIES TIMEOUT 10)
+    gtest_discover_tests(${test_target} PROPERTIES LABELS unit TIMEOUT 10)
 endforeach()
+
+add_subdirectory(e2e)

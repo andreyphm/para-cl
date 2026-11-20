@@ -5,4 +5,7 @@ x @Assign 0 @StatementEnd
 @If @GroupBegin x @Equal 3 @GroupEnd @Output x @StatementEnd
 @If @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
 @While @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
-@Output 4 @StatementEnd
+@BlockBegin @BlockEnd
+@If @GroupBegin x @Equal 3 @GroupEnd @BlockBegin
+    @Output 4 @StatementEnd
+@BlockEnd

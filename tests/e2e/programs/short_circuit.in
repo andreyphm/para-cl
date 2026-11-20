@@ -1,0 +1,6 @@
+@Output 0 @LogicalAnd @Input @StatementEnd
+@Output 1 @LogicalOr @Input @StatementEnd
+@Output @Input @StatementEnd
+@Output 1 @LogicalAnd @Input @StatementEnd
+@Output 0 @LogicalOr @Input @StatementEnd
+@Output @Input @StatementEnd
