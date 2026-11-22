@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 
 
@@ -17,16 +18,42 @@ class Case:
 
 
 CASES = {
-    "factorial": Case(stdout=b"120\n", stdin=b"5\n"),
-    "fibonacci": Case(stdout=b"89\n", stdin=b"10\n"),
-    "gcd": Case(stdout=b"6\n", stdin=b"48 18\n"),
+    "factorial.0": Case(stdout=b"1\n", stdin=b"0\n"),
+    "factorial.1": Case(stdout=b"1\n", stdin=b"1\n"),
+    "factorial.2": Case(stdout=b"2\n", stdin=b"2\n"),
+    "factorial.5": Case(stdout=b"120\n", stdin=b"5\n"),
+    "factorial.7": Case(stdout=b"5040\n", stdin=b"7\n"),
+    "fibonacci.0": Case(stdout=b"1\n", stdin=b"0\n"),
+    "fibonacci.1": Case(stdout=b"1\n", stdin=b"1\n"),
+    "fibonacci.2": Case(stdout=b"2\n", stdin=b"2\n"),
+    "fibonacci.10": Case(stdout=b"89\n", stdin=b"10\n"),
+    "fibonacci.20": Case(stdout=b"10946\n", stdin=b"20\n"),
+    "gcd.common_factor": Case(stdout=b"6\n", stdin=b"48 18\n"),
+    "gcd.coprime": Case(stdout=b"1\n", stdin=b"35 64\n"),
+    "gcd.equal": Case(stdout=b"21\n", stdin=b"21 21\n"),
+    "gcd.zero_second": Case(stdout=b"27\n", stdin=b"27 0\n"),
+    "gcd.zero_first": Case(stdout=b"27\n", stdin=b"0 27\n"),
+    "short_circuit.and_false_or_true": Case(
+        stdout=b"0\n1\n41\n0\n1\n99\n", stdin=b"41 0 -3 99\n"
+    ),
+    "short_circuit.and_false_or_false": Case(
+        stdout=b"0\n1\n12\n0\n0\n34\n", stdin=b"12 0 0 34\n"
+    ),
+    "short_circuit.and_true_or_false": Case(
+        stdout=b"0\n1\n56\n1\n0\n78\n", stdin=b"56 -2 0 78\n"
+    ),
+    "short_circuit.and_true_or_true": Case(
+        stdout=b"0\n1\n90\n1\n1\n17\n", stdin=b"90 2 -5 17\n"
+    ),
+    "short_circuit.mixed_whitespace": Case(
+        stdout=b"0\n1\n-11\n1\n1\n-22\n", stdin=b"-11\n  7\t9\n-22"
+    ),
     "nested_loops": Case(stdout=b"36\n"),
     "scopes": Case(stdout=b"1\n1\n1\n3\n"),
     "statement_bodies": Case(stdout=b"3\n4\n"),
     "expressions": Case(
         stdout=b"14\n20\n12\n6\n-2\n1\n3\n1\n1\n1\n0\n0\n1\n1\n1\n1\n1\n1\n1\n7\n7\n"
     ),
-    "short_circuit": Case(stdout=b"0\n1\n41\n0\n1\n99\n", stdin=b"41 0 -3 99\n"),
     "empty": Case(stdout=b""),
 }
 
@@ -53,9 +80,10 @@ def render_program(template: str) -> str:
 
 def run_case(executable: Path, name: str) -> None:
     case = CASES[name]
+    program_name = name.partition(".")[0]
     with TemporaryDirectory(prefix="para_cl-e2e-") as directory:
         source = Path(directory) / "program.paracl"
-        source.write_bytes(render_program(program_template(name)).encode("utf-8"))
+        source.write_bytes(render_program(program_template(program_name)).encode("utf-8"))
         result = subprocess.run(
             [str(executable.resolve()), str(source)],
             input=case.stdin,
@@ -74,6 +102,10 @@ def run_case(executable: Path, name: str) -> None:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--list-cases"]:
+        print(*CASES, sep="\n")
+        raise SystemExit(0)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("executable", type=Path)
     parser.add_argument("case", choices=CASES)
