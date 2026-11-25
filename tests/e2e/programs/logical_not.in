@@ -1,0 +1,7 @@
+@Output @LogicalNot 0 @StatementEnd
+@Output @LogicalNot @GroupBegin @Minus 1 @GroupEnd @StatementEnd
+@Output @LogicalNot @GroupBegin @LogicalNot 0 @GroupEnd @StatementEnd
+@Output @LogicalNot 0 @Mul 3 @StatementEnd
+@Output @LogicalNot 0 @NotEqual 1 @StatementEnd
+@Output @LogicalNot @Input @StatementEnd
+@Output @Input @StatementEnd

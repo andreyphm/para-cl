@@ -258,7 +258,7 @@ TEST(ExpressionTreeTest, EvaluatesNestedArithmetic) {
     EXPECT_EQ(expression.evaluate(context), 14);
 }
 
-TEST(UnaryExpressionTest, EvaluatesBothOperators) {
+TEST(UnaryExpressionTest, EvaluatesUnaryOperators) {
     std::istringstream input;
     std::ostringstream context_output;
     RuntimeContext context{input, context_output};
@@ -268,11 +268,15 @@ TEST(UnaryExpressionTest, EvaluatesBothOperators) {
             std::make_unique<NumberExpression>(value)};
         const UnaryExpression minus{UnaryOperator::Minus,
             std::make_unique<NumberExpression>(value)};
+        const UnaryExpression logical_not{UnaryOperator::LogicalNot,
+            std::make_unique<NumberExpression>(value)};
         const Expression& positive = plus;
         const Expression& negative = minus;
+        const Expression& negated = logical_not;
 
         EXPECT_EQ(positive.evaluate(context), value);
         EXPECT_EQ(negative.evaluate(context), -value);
+        EXPECT_EQ(negated.evaluate(context), value == 0 ? 1 : 0);
     }
 }
 

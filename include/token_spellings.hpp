@@ -38,6 +38,7 @@ inline constexpr TokenSpelling operator_spellings[] = {
     {">=", TokenKind::GreaterEqual},
     {"&&", TokenKind::LogicalAnd},
     {"||", TokenKind::LogicalOr},
+    {"!",  TokenKind::LogicalNot},
 };
 
 } // namespace ParaCL::Detail

@@ -51,6 +51,7 @@ int UnaryExpression::evaluate(RuntimeContext& context) const {
     switch (operation_) {
         case UnaryOperator::Plus:  return operand_->evaluate(context);
         case UnaryOperator::Minus: return -operand_->evaluate(context);
+        case UnaryOperator::LogicalNot: return !operand_->evaluate(context);
     }
 
     throw std::logic_error("Unknown unary operator");

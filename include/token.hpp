@@ -30,6 +30,7 @@ enum class TokenKind {
 
     LogicalAnd,
     LogicalOr,
+    LogicalNot,
 
     GroupBegin,
     GroupEnd,

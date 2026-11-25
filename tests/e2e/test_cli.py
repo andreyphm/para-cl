@@ -52,6 +52,7 @@ CASES = {
     "scopes": Case(stdout=b"1\n1\n1\n3\n"),
     "statement_bodies": Case(stdout=b"3\n4\n"),
     "empty_statement": Case(stdout=b"42\n", stdin=b"5 7 0 -3 0 42\n"),
+    "logical_not": Case(stdout=b"1\n0\n0\n3\n0\n1\n42\n", stdin=b"0 42\n"),
     "expressions": Case(
         stdout=b"14\n20\n12\n6\n-2\n1\n3\n1\n1\n1\n0\n0\n1\n1\n1\n1\n1\n1\n1\n7\n7\n"
     ),

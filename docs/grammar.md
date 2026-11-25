@@ -47,7 +47,7 @@ AddSub = MulDiv, { ( @Plus | @Minus ), MulDiv }
 
 MulDiv = Unary, { ( @Mul | @Div ), Unary }
 
-Unary = [ @Plus | @Minus ], Primary
+Unary = [ @Plus | @Minus | @LogicalNot ], Primary
 
 Primary = @Number
         | @Identifier

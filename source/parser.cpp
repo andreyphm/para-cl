@@ -49,6 +49,7 @@ std::optional<UnaryOperator> unary_operator_for(TokenKind kind) {
     switch (kind) {
         case TokenKind::Plus: return UnaryOperator::Plus;
         case TokenKind::Minus: return UnaryOperator::Minus;
+        case TokenKind::LogicalNot: return UnaryOperator::LogicalNot;
         default: return std::nullopt;
     }
 }

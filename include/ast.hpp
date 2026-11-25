@@ -26,7 +26,8 @@ enum class BinaryOperator {
 
 enum class UnaryOperator {
     Plus,
-    Minus
+    Minus,
+    LogicalNot
 };
 
 class Expression {
