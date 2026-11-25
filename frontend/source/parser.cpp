@@ -49,6 +49,7 @@ std::optional<UnaryOperator> unary_operator_for(TokenKind kind) {
     switch (kind) {
         case TokenKind::Plus: return UnaryOperator::Plus;
         case TokenKind::Minus: return UnaryOperator::Minus;
+        case TokenKind::LogicalNot: return UnaryOperator::LogicalNot;
         default: return std::nullopt;
     }
 }
@@ -80,6 +81,7 @@ std::unique_ptr<Statement> Parser::parse_statement() {
         case TokenKind::If: return parse_if();
         case TokenKind::While: return parse_while();
         case TokenKind::Output: return parse_output();
+        case TokenKind::StatementEnd: return parse_empty_statement();
         default: return parse_expression_statement();
     }
 }
@@ -99,8 +101,13 @@ std::unique_ptr<Statement> Parser::parse_if() {
     consume(TokenKind::GroupBegin);
     auto condition = parse_expression();
     consume(TokenKind::GroupEnd);
-    auto body = parse_statement();
-    return std::make_unique<IfStatement>(std::move(condition), std::move(body));
+    auto then_branch = parse_statement();
+    std::unique_ptr<Statement> else_branch;
+    if (current_token().kind == TokenKind::Else) {
+        consume(TokenKind::Else);
+        else_branch = parse_statement();
+    }
+    return std::make_unique<IfStatement>(std::move(condition), std::move(then_branch), std::move(else_branch));
 }
 
 std::unique_ptr<Statement> Parser::parse_while() {
@@ -127,6 +134,11 @@ std::unique_ptr<Statement> Parser::parse_expression_statement() {
 
 std::unique_ptr<Expression> Parser::parse_expression() {
     return parse_assignment();
+}
+
+std::unique_ptr<Statement> Parser::parse_empty_statement() {
+    consume(TokenKind::StatementEnd);
+    return std::make_unique<EmptyStatement>();
 }
 
 std::unique_ptr<Expression> Parser::parse_assignment() {

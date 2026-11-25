@@ -96,7 +96,6 @@ TEST_P(ParserSyntaxTest, RejectsInvalidProgramAtExpectedPosition) {
 }
 
 const SyntaxCase syntax_cases[] = {
-    {"EmptyStatement", {K::StatementEnd}, 0},
     {"EmptyOutput", {K::Output, K::StatementEnd}, 1},
     {"MissingTerminator", {"1"}, 1, K::StatementEnd},
     {"MissingOutputTerminator", {K::Output, "1"}, 2, K::StatementEnd},
@@ -117,6 +116,8 @@ const SyntaxCase syntax_cases[] = {
     {"MissingIfGroupBegin", {K::If, "1", K::GroupEnd, K::BlockBegin, K::BlockEnd}, 1, K::GroupBegin},
     {"MissingIfGroupEnd", {K::If, K::GroupBegin, "1", K::BlockBegin, K::BlockEnd}, 3, K::GroupEnd},
     {"MissingIfBody", {K::If, K::GroupBegin, "1", K::GroupEnd}, 4},
+    {"UnmatchedElse", {K::Else, K::StatementEnd}, 0},
+    {"MissingElseBody", {K::If, K::GroupBegin, "1", K::GroupEnd, K::StatementEnd, K::Else}, 6},
     {"EmptyWhileCondition", {K::While, K::GroupBegin, K::GroupEnd, K::BlockBegin, K::BlockEnd}, 2},
     {"MissingWhileGroupBegin", {K::While, "0", K::GroupEnd, K::BlockBegin, K::BlockEnd}, 1, K::GroupBegin},
     {"MissingWhileGroupEnd", {K::While, K::GroupBegin, "0", K::BlockBegin, K::BlockEnd}, 3, K::GroupEnd},
@@ -128,6 +129,9 @@ const SyntaxCase syntax_cases[] = {
     {"RepeatedAssignmentToken", {"x", K::Assign, K::Assign, "1", K::StatementEnd}, 2},
     {"DoubleUnaryPlus", {K::Plus, K::Plus, "1", K::StatementEnd}, 1},
     {"DoubleUnaryMinus", {K::Minus, K::Minus, "1", K::StatementEnd}, 1},
+    {"DoubleLogicalNot", {K::LogicalNot, K::LogicalNot, "1", K::StatementEnd}, 1},
+    {"MissingLogicalNotOperand", {K::LogicalNot, K::StatementEnd}, 1},
+    {"InfixLogicalNot", {K::Output, "1", K::LogicalNot, "2", K::StatementEnd}, 2, K::StatementEnd},
     {"PlusMinusUnary", {K::Plus, K::Minus, "1", K::StatementEnd}, 1},
     {"MinusPlusUnary", {K::Minus, K::Plus, "1", K::StatementEnd}, 1},
     {"AdjacentNumbers", {"1", "2", K::StatementEnd}, 1, K::StatementEnd},
@@ -135,9 +139,6 @@ const SyntaxCase syntax_cases[] = {
     {"OutputExtraExpression", {K::Output, "1", "2", K::StatementEnd}, 2, K::StatementEnd},
     {"KeywordInsideExpression", {"x", K::Assign, K::While, K::StatementEnd}, 2},
     {"MissingTerminatorBeforeOutput", {"x", K::Assign, "1", K::Output, "2", K::StatementEnd}, 3, K::StatementEnd},
-    {"EmptyIfBody", {K::If, K::GroupBegin, "0", K::GroupEnd, K::StatementEnd}, 4},
-    {"EmptyWhileBody", {K::While, K::GroupBegin, "0", K::GroupEnd, K::StatementEnd}, 4},
-    {"TerminatorAfterBlock", {K::BlockBegin, K::BlockEnd, K::StatementEnd}, 2},
     {"InvalidSkippedBranch", {K::If, K::GroupBegin, "0", K::GroupEnd, K::Output, K::StatementEnd}, 5},
     {"InvalidShortCircuitOperand", {"1", K::LogicalOr, K::GroupBegin, K::GroupEnd, K::StatementEnd}, 3},
 };
@@ -165,17 +166,22 @@ TEST(ParserAcceptanceTest, ParsesStatementAlternativesWithoutExecution) {
     };
     const StatementCase cases[] = {
         {"EmptyProgram", {}},
+        {"EmptyStatement", {K::StatementEnd}},
         {"EmptyBlock", {K::BlockBegin, K::BlockEnd}},
+        {"EmptyStatementInsideBlock", {K::BlockBegin, K::StatementEnd, K::BlockEnd}},
+        {"EmptyStatementAfterBlock", {K::BlockBegin, K::BlockEnd, K::StatementEnd}},
         {"NestedBlocks", {K::BlockBegin, K::BlockBegin, K::BlockEnd, K::BlockEnd}},
         {"Output", {K::Output, K::Input, K::StatementEnd}},
         {"IfWithExpressionBody", {K::If, K::GroupBegin, "1", K::GroupEnd,
             "x", K::Assign, "2", K::StatementEnd}},
         {"IfWithBlockBody", {K::If, K::GroupBegin, "1", K::GroupEnd, K::BlockBegin, K::BlockEnd}},
+        {"IfWithEmptyStatementBody", {K::If, K::GroupBegin, "0", K::GroupEnd, K::StatementEnd}},
         {"NestedIf", {K::If, K::GroupBegin, "1", K::GroupEnd,
             K::If, K::GroupBegin, "1", K::GroupEnd, K::Output, "7", K::StatementEnd}},
         {"WhileWithExpressionBody", {K::While, K::GroupBegin, "1", K::GroupEnd,
             K::Input, K::StatementEnd}},
         {"WhileWithBlockBody", {K::While, K::GroupBegin, "1", K::GroupEnd, K::BlockBegin, K::BlockEnd}},
+        {"WhileWithEmptyStatementBody", {K::While, K::GroupBegin, "0", K::GroupEnd, K::StatementEnd}},
     };
     for (const auto& test : cases) {
         SCOPED_TRACE(test.name);

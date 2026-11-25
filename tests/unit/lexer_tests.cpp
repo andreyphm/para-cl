@@ -188,11 +188,11 @@ TEST(LexerTest, KeepsKeywordPrefixesInsideIdentifiers) {
 }
 
 TEST(LexerTest, RecognizesKeywordsAndTracksTheirPositions) {
-    expect_fixed_sequence({TokenKind::If, TokenKind::While, TokenKind::Output}, false);
+    expect_fixed_sequence({TokenKind::If, TokenKind::Else, TokenKind::While, TokenKind::Output}, false);
 }
 
 TEST(LexerTest, MatchesOnlyCompleteCaseSensitiveKeywords) {
-    for (const TokenKind kind : {TokenKind::If, TokenKind::While, TokenKind::Output}) {
+    for (const TokenKind kind : {TokenKind::If, TokenKind::Else, TokenKind::While, TokenKind::Output}) {
         std::string changed_case = spelling_for(kind);
         for (char& symbol : changed_case) {
             if (symbol >= 'a' && symbol <= 'z') {
@@ -212,7 +212,7 @@ TEST(LexerTest, RecognizesEveryOperatorAndDelimiterAtEndOfSource) {
         TokenKind::Plus, TokenKind::Minus, TokenKind::Mul, TokenKind::Div,
         TokenKind::Assign, TokenKind::Equal, TokenKind::NotEqual,
         TokenKind::Less, TokenKind::LessEqual, TokenKind::Greater,
-        TokenKind::GreaterEqual, TokenKind::LogicalAnd, TokenKind::LogicalOr,
+        TokenKind::GreaterEqual, TokenKind::LogicalAnd, TokenKind::LogicalOr, TokenKind::LogicalNot,
         TokenKind::Input, TokenKind::GroupBegin, TokenKind::GroupEnd,
         TokenKind::BlockBegin, TokenKind::BlockEnd, TokenKind::StatementEnd,
     };
@@ -227,7 +227,7 @@ TEST(LexerTest, RecognizesEveryOperatorAndDelimiterAtEndOfSource) {
 
 TEST(LexerTest, ChoosesLongestOperatorInAdjacentSequence) {
     expect_fixed_sequence({TokenKind::Equal, TokenKind::Assign, TokenKind::LessEqual,
-                           TokenKind::GreaterEqual, TokenKind::NotEqual,
+                           TokenKind::GreaterEqual, TokenKind::LogicalNot, TokenKind::NotEqual,
                            TokenKind::LogicalAnd, TokenKind::LogicalOr}, true);
 }
 

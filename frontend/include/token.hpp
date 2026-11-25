@@ -11,6 +11,7 @@ enum class TokenKind {
     Identifier,
 
     If,
+    Else,
     While,
     Input,
     Output,
@@ -30,6 +31,7 @@ enum class TokenKind {
 
     LogicalAnd,
     LogicalOr,
+    LogicalNot,
 
     GroupBegin,
     GroupEnd,

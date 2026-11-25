@@ -14,18 +14,21 @@ Statement = Block
           | IfStatement
           | WhileStatement
           | OutputStatement
+          | EmptyStatement
           | ExpressionStatement
 
 
 Block = @BlockBegin, { Statement }, @BlockEnd
 
-IfStatement = @If, @GroupBegin, Expression, @GroupEnd, Statement
+IfStatement = @If, @GroupBegin, Expression, @GroupEnd, Statement, [ @Else, Statement ]
 
 WhileStatement = @While, @GroupBegin, Expression, @GroupEnd, Statement
 
 OutputStatement = @Output, Expression, @StatementEnd
 
 ExpressionStatement = Expression, @StatementEnd
+
+EmptyStatement = @StatementEnd
 
 
 Expression = Assignment
@@ -44,7 +47,7 @@ AddSub = MulDiv, { ( @Plus | @Minus ), MulDiv }
 
 MulDiv = Unary, { ( @Mul | @Div ), Unary }
 
-Unary = [ @Plus | @Minus ], Primary
+Unary = [ @Plus | @Minus | @LogicalNot ], Primary
 
 Primary = @Number
         | @Identifier

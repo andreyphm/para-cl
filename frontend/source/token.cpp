@@ -9,6 +9,7 @@ std::string_view token_kind_name(TokenKind kind) {
         case TokenKind::Number: return "Number";
         case TokenKind::Identifier: return "Identifier";
         case TokenKind::If: return "If";
+        case TokenKind::Else: return "Else";
         case TokenKind::While: return "While";
         case TokenKind::Input: return "Input";
         case TokenKind::Output: return "Output";
@@ -25,6 +26,7 @@ std::string_view token_kind_name(TokenKind kind) {
         case TokenKind::GreaterEqual: return "GreaterEqual";
         case TokenKind::LogicalAnd: return "LogicalAnd";
         case TokenKind::LogicalOr: return "LogicalOr";
+        case TokenKind::LogicalNot: return "LogicalNot";
         case TokenKind::GroupBegin: return "GroupBegin";
         case TokenKind::GroupEnd: return "GroupEnd";
         case TokenKind::BlockBegin: return "BlockBegin";

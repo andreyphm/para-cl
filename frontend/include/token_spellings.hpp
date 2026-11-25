@@ -13,6 +13,7 @@ struct TokenSpelling {
 
 inline constexpr TokenSpelling keyword_spellings[] = {
     {"if", TokenKind::If},
+    {"else", TokenKind::Else},
     {"while", TokenKind::While},
     {"print", TokenKind::Output},
 };
@@ -38,6 +39,7 @@ inline constexpr TokenSpelling operator_spellings[] = {
     {">=", TokenKind::GreaterEqual},
     {"&&", TokenKind::LogicalAnd},
     {"||", TokenKind::LogicalOr},
+    {"!",  TokenKind::LogicalNot},
 };
 
 } // namespace ParaCL::Detail

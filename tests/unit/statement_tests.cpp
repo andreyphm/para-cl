@@ -532,6 +532,21 @@ TEST(IfStatementTest, ConditionErrorPreventsBodyExecution) {
     EXPECT_TRUE(output.str().empty());
 }
 
+TEST(IfStatementTest, ExecutesOnlyTheSelectedBranchAndEvaluatesTheConditionOnce) {
+    std::istringstream input{"0 -2 99"};
+    std::ostringstream output;
+    RuntimeContext context{input, output};
+    const IfStatement statement{std::make_unique<InputExpression>(),
+        std::make_unique<OutputStatement>(std::make_unique<NumberExpression>(1)),
+        std::make_unique<OutputStatement>(std::make_unique<NumberExpression>(2))};
+
+    statement.execute(context);
+    statement.execute(context);
+
+    EXPECT_EQ(output.str(), "2\n1\n");
+    EXPECT_EQ(InputExpression{}.evaluate(context), 99);
+}
+
 TEST(IfStatementTest, PropagatesBodyErrorAndUnwindsBlockScope) {
     std::istringstream input;
     std::ostringstream output;

@@ -26,7 +26,8 @@ enum class BinaryOperator {
 
 enum class UnaryOperator {
     Plus,
-    Minus
+    Minus,
+    LogicalNot
 };
 
 class Expression {
@@ -117,11 +118,13 @@ private:
 
 class IfStatement : public Statement {
 public:
-    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body);
+    IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
+                std::unique_ptr<Statement> else_branch = nullptr);
     void execute(RuntimeContext& context) const override;
 private:
     std::unique_ptr<Expression> condition_;
-    std::unique_ptr<Statement> body_;
+    std::unique_ptr<Statement> then_branch_;
+    std::unique_ptr<Statement> else_branch_;
 };
 
 class WhileStatement : public Statement {
@@ -131,6 +134,11 @@ public:
 private:
     std::unique_ptr<Expression> condition_;
     std::unique_ptr<Statement> body_;
+};
+
+class EmptyStatement : public Statement {
+public:
+    void execute(RuntimeContext&) const override {}
 };
 
 
