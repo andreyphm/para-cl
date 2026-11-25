@@ -38,6 +38,23 @@ public:
         expression_value_ = builder_.getInt32(value);
     }
 
+    void visit_unary(UnaryOperator operation, const Expression& operand) override {
+        operand.accept(*this);
+        switch (operation) {
+            case UnaryOperator::Plus:
+                return;
+            case UnaryOperator::Minus:
+                expression_value_ = builder_.CreateNeg(expression_value_);
+                return;
+            case UnaryOperator::LogicalNot: {
+                auto* is_zero = builder_.CreateICmpEQ(expression_value_, builder_.getInt32(0));
+                expression_value_ = builder_.CreateZExt(is_zero, builder_.getInt32Ty());
+                return;
+            }
+        }
+        throw std::logic_error("Unknown unary operator");
+    }
+
     void visit_expression_statement(const Expression&) override {
         throw std::runtime_error("LLVM IR generation for expression statements is not implemented");
     }

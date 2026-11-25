@@ -67,6 +67,10 @@ int UnaryExpression::evaluate(RuntimeContext& context) const {
     throw std::logic_error("Unknown unary operator");
 }
 
+void UnaryExpression::accept(AstVisitor& visitor) const {
+    visitor.visit_unary(operation_, *operand_);
+}
+
 int VariableExpression::evaluate(RuntimeContext& context) const {
     return context.get_variable(name_);
 }

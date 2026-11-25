@@ -61,6 +61,7 @@ class UnaryExpression : public Expression {
 public:
     UnaryExpression(UnaryOperator operation, std::unique_ptr<Expression> operand);
     int evaluate(RuntimeContext& context) const override;
+    void accept(AstVisitor& visitor) const override;
 private:
     UnaryOperator operation_;
     std::unique_ptr<Expression> operand_;
@@ -99,6 +100,7 @@ public:
     virtual void visit_if(const Expression& condition, const Statement& then_branch, const Statement* else_branch) = 0;
     virtual void visit_while(const Expression& condition, const Statement& body) = 0;
     virtual void visit_number(int number) = 0;
+    virtual void visit_unary(UnaryOperator operation, const Expression& operand) = 0;
     virtual void enter_block() = 0;
     virtual void leave_block() = 0;
     virtual ~AstVisitor() = default;

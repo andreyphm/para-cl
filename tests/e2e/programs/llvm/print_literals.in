@@ -5,3 +5,11 @@
 @BlockEnd
 @StatementEnd
 @Output 7 @StatementEnd
+@Output @Minus 1 @StatementEnd
+@Output @Minus 2147483647 @StatementEnd
+@Output @Plus @GroupBegin @Minus 7 @GroupEnd @StatementEnd
+@Output @Minus @GroupBegin @Minus 5 @GroupEnd @StatementEnd
+@Output @LogicalNot 0 @StatementEnd
+@Output @LogicalNot 42 @StatementEnd
+@Output @LogicalNot @GroupBegin @Minus 1 @GroupEnd @StatementEnd
+@Output @Minus @GroupBegin @LogicalNot 0 @GroupEnd @StatementEnd

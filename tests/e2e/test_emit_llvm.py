@@ -18,7 +18,10 @@ def check_print_literals(executable: str, lli: str) -> None:
         executed = subprocess.run([lli, "-"], input=generated.stdout,
                                   capture_output=True, text=True, timeout=5)
         assert executed.returncode == 0 and not executed.stderr, executed
-        assert executed.stdout == "42\n0\n2147483647\n7\n", executed
+        assert executed.stdout == "42\n0\n2147483647\n7\n-1\n-2147483647\n-7\n5\n1\n0\n0\n-1\n", executed
+        interpreted = subprocess.run([executable, str(source)], capture_output=True, text=True, timeout=5)
+        assert interpreted.returncode == 0 and not interpreted.stderr, interpreted
+        assert interpreted.stdout == executed.stdout, interpreted
 
 
 def main(executable: str) -> None:
