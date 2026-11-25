@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "runtime_context.hpp"
+
 namespace ParaCL {
 
 BinaryExpression::BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
@@ -55,6 +57,10 @@ int UnaryExpression::evaluate(RuntimeContext& context) const {
     }
 
     throw std::logic_error("Unknown unary operator");
+}
+
+int VariableExpression::evaluate(RuntimeContext& context) const {
+    return context.get_variable(name_);
 }
 
 int InputExpression::evaluate(RuntimeContext& context) const {

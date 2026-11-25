@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "runtime_context.hpp"
 
 #include <gtest/gtest.h>
 

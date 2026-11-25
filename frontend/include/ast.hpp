@@ -5,9 +5,9 @@
 #include <vector>
 #include <string>
 
-#include "runtime_context.hpp"
-
 namespace ParaCL {
+
+class RuntimeContext;
 
 enum class BinaryOperator {
     Add,
@@ -66,7 +66,7 @@ private:
 class VariableExpression : public Expression {
 public:
     explicit VariableExpression(std::string name) : name_(std::move(name)) {}
-    int evaluate(RuntimeContext& context) const override { return context.get_variable(name_); }
+    int evaluate(RuntimeContext& context) const override;
 private:
     std::string name_;
 };
