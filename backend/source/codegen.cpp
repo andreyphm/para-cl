@@ -65,6 +65,7 @@ public:
         right.accept(*this);
         auto* right_value = expression_value_;
 
+        llvm::CmpInst::Predicate predicate;
         switch (operation) {
             case BinaryOperator::Add:
                 expression_value_ = builder_.CreateAdd(left_value, right_value);
@@ -78,9 +79,29 @@ public:
             case BinaryOperator::Div:
                 expression_value_ = builder_.CreateSDiv(left_value, right_value);
                 return;
+            case BinaryOperator::Equal:
+                predicate = llvm::CmpInst::ICMP_EQ;
+                break;
+            case BinaryOperator::NotEqual:
+                predicate = llvm::CmpInst::ICMP_NE;
+                break;
+            case BinaryOperator::Less:
+                predicate = llvm::CmpInst::ICMP_SLT;
+                break;
+            case BinaryOperator::LessEqual:
+                predicate = llvm::CmpInst::ICMP_SLE;
+                break;
+            case BinaryOperator::Greater:
+                predicate = llvm::CmpInst::ICMP_SGT;
+                break;
+            case BinaryOperator::GreaterEqual:
+                predicate = llvm::CmpInst::ICMP_SGE;
+                break;
             default:
                 throw std::runtime_error("LLVM IR generation for this binary operator is not implemented");
         }
+        auto* comparison = builder_.CreateICmp(predicate, left_value, right_value);
+        expression_value_ = builder_.CreateZExt(comparison, builder_.getInt32Ty());
     }
 
     void visit_if(const Expression&, const Statement&, const Statement*) override {
