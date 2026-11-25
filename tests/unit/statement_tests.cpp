@@ -25,6 +25,7 @@ TEST(AstVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
         std::ostringstream events;
         void visit_number(int) override { events << "number "; }
         void visit_unary(UnaryOperator, const Expression&) override { events << "unary "; }
+        void visit_binary(BinaryOperator, const Expression&, const Expression&) override { events << "binary "; }
         void visit_empty() override { events << "empty "; }
         void visit_output(const Expression&) override { events << "output "; }
         void visit_expression_statement(const Expression&) override { events << "expression "; }

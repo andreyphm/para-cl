@@ -22,6 +22,10 @@ BinaryExpression::BinaryExpression(BinaryOperator operation, std::unique_ptr<Exp
     }
 }
 
+void BinaryExpression::accept(AstVisitor& visitor) const {
+    visitor.visit_binary(operation_, *left_, *right_);
+}
+
 int BinaryExpression::evaluate(RuntimeContext& context) const {
     const int left_value = left_->evaluate(context);
 

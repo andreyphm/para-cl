@@ -1,0 +1,6 @@
+@Output 7 @Div 3 @StatementEnd
+@Output @Minus 7 @Div 3 @StatementEnd
+@Output 7 @Div @Minus 3 @StatementEnd
+@Output @Minus 7 @Div @Minus 3 @StatementEnd
+@Output 0 @Div 4 @StatementEnd
+@Output 24 @Div @GroupBegin 12 @Div 3 @GroupEnd @StatementEnd

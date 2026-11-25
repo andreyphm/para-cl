@@ -59,6 +59,30 @@ public:
         throw std::runtime_error("LLVM IR generation for expression statements is not implemented");
     }
 
+    void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) override {
+        left.accept(*this);
+        auto* left_value = expression_value_;
+        right.accept(*this);
+        auto* right_value = expression_value_;
+
+        switch (operation) {
+            case BinaryOperator::Add:
+                expression_value_ = builder_.CreateAdd(left_value, right_value);
+                return;
+            case BinaryOperator::Sub:
+                expression_value_ = builder_.CreateSub(left_value, right_value);
+                return;
+            case BinaryOperator::Mul:
+                expression_value_ = builder_.CreateMul(left_value, right_value);
+                return;
+            case BinaryOperator::Div:
+                expression_value_ = builder_.CreateSDiv(left_value, right_value);
+                return;
+            default:
+                throw std::runtime_error("LLVM IR generation for this binary operator is not implemented");
+        }
+    }
+
     void visit_if(const Expression&, const Statement&, const Statement*) override {
         throw std::runtime_error("LLVM IR generation for if statements is not implemented");
     }

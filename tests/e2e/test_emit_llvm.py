@@ -7,8 +7,8 @@ from tempfile import TemporaryDirectory
 from test_cli import program_template, render_program
 
 
-def check_print_literals(executable: str, lli: str) -> None:
-    template = program_template("llvm/print_literals")
+def check_print(executable: str, lli: str, name: str, expected: str) -> None:
+    template = program_template(f"llvm/{name}")
     with TemporaryDirectory() as directory:
         source = Path(directory) / "print.paracl"
         source.write_text(render_program(template), encoding="utf-8")
@@ -18,7 +18,7 @@ def check_print_literals(executable: str, lli: str) -> None:
         executed = subprocess.run([lli, "-"], input=generated.stdout,
                                   capture_output=True, text=True, timeout=5)
         assert executed.returncode == 0 and not executed.stderr, executed
-        assert executed.stdout == "42\n0\n2147483647\n7\n-1\n-2147483647\n-7\n5\n1\n0\n0\n-1\n", executed
+        assert executed.stdout == expected, executed
         interpreted = subprocess.run([executable, str(source)], capture_output=True, text=True, timeout=5)
         assert interpreted.returncode == 0 and not interpreted.stderr, interpreted
         assert interpreted.stdout == executed.stdout, interpreted
@@ -57,6 +57,8 @@ if __name__ == "__main__":
         if lli is None:
             print("Skipping LLVM execution test: lli is missing from PATH")
             sys.exit(77)
-        check_print_literals(sys.argv[1], lli)
+        check_print(sys.argv[1], lli, "print_literals", "42\n0\n2147483647\n7\n-1\n-2147483647\n-7\n5\n1\n0\n0\n-1\n")
+        check_print(sys.argv[1], lli, "print_arithmetic", "4\n16\n12\n-10\n")
+        check_print(sys.argv[1], lli, "print_division", "2\n-2\n-2\n2\n0\n6\n")
     else:
         main(sys.argv[1])

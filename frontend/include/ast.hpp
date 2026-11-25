@@ -51,6 +51,7 @@ class BinaryExpression : public Expression {
 public:
     BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
     int evaluate(RuntimeContext& context) const override;
+    void accept(AstVisitor& visitor) const override;
 private:
     BinaryOperator operation_;
     std::unique_ptr<Expression> left_;
@@ -101,6 +102,7 @@ public:
     virtual void visit_while(const Expression& condition, const Statement& body) = 0;
     virtual void visit_number(int number) = 0;
     virtual void visit_unary(UnaryOperator operation, const Expression& operand) = 0;
+    virtual void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) = 0;
     virtual void enter_block() = 0;
     virtual void leave_block() = 0;
     virtual ~AstVisitor() = default;
