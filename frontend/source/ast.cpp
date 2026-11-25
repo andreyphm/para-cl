@@ -118,6 +118,14 @@ void BlockStatement::execute(RuntimeContext& context) const {
     }
 }
 
+void BlockStatement::accept(StatementVisitor& visitor) const {
+    visitor.enter_block();
+    for (const auto& statement : statements_) {
+        statement->accept(visitor);
+    }
+    visitor.leave_block();
+}
+
 IfStatement::IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
                          std::unique_ptr<Statement> else_branch)
     : condition_(std::move(condition)), then_branch_(std::move(then_branch)),
@@ -165,6 +173,12 @@ Program::Program(std::vector<std::unique_ptr<Statement>> statements) : statement
 void Program::execute(RuntimeContext& context) const {
     for (const auto& statement : statements_) {
         statement->execute(context);
+    }
+}
+
+void Program::accept(StatementVisitor& visitor) const {
+    for (const auto& statement : statements_) {
+        statement->accept(visitor);
     }
 }
 

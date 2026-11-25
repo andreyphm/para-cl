@@ -1,4 +1,6 @@
 #include "ast.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
 #include "runtime_context.hpp"
 
 #include <gtest/gtest.h>
@@ -17,6 +19,34 @@
 
 namespace ParaCL {
 namespace {
+
+TEST(StatementVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
+    struct RecordingVisitor : StatementVisitor {
+        std::ostringstream events;
+        void visit_empty() override { events << "empty "; }
+        void visit_output(const Expression&) override { events << "output "; }
+        void visit_expression_statement(const Expression&) override { events << "expression "; }
+        void visit_if(const Expression&, const Statement& then_branch, const Statement* else_branch) override {
+            events << "if ";
+            then_branch.accept(*this);
+            if (else_branch) {
+                events << "else ";
+                else_branch->accept(*this);
+            }
+        }
+        void visit_while(const Expression&, const Statement& body) override {
+            events << "while ";
+            body.accept(*this);
+        }
+        void enter_block() override { events << "{ "; }
+        void leave_block() override { events << "} "; }
+    };
+
+    Parser parser{tokenize("1; { if (1) print 2; else {} while (0) { ; } } if (0) ;")};
+    RecordingVisitor visitor;
+    parser.parse_program()->accept(visitor);
+    EXPECT_EQ(visitor.events.str(), "expression { if output else { } while { empty } } if empty ");
+}
 
 TEST(ExpressionStatementTest, ExecutesAssignmentThroughBaseInterface) {
     std::istringstream input;
