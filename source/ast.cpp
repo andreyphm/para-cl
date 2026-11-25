@@ -112,19 +112,23 @@ void BlockStatement::execute(RuntimeContext& context) const {
     }
 }
 
-IfStatement::IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body)
-    : condition_(std::move(condition)), body_(std::move(body)) {
+IfStatement::IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
+                         std::unique_ptr<Statement> else_branch)
+    : condition_(std::move(condition)), then_branch_(std::move(then_branch)),
+      else_branch_(std::move(else_branch)) {
     if (!condition_) {
         throw std::invalid_argument("'if' condition must not be null");
     }
-    if (!body_) {
+    if (!then_branch_) {
         throw std::invalid_argument("'if' body must not be null");
     }
 }
 
 void IfStatement::execute(RuntimeContext& context) const {
     if (condition_->evaluate(context)) {
-        body_->execute(context);
+        then_branch_->execute(context);
+    } else if (else_branch_) {
+        else_branch_->execute(context);
     }
 }
 

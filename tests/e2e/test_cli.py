@@ -28,6 +28,9 @@ CASES = {
     "fibonacci.2": Case(stdout=b"2\n", stdin=b"2\n"),
     "fibonacci.10": Case(stdout=b"89\n", stdin=b"10\n"),
     "fibonacci.20": Case(stdout=b"10946\n", stdin=b"20\n"),
+    "fibonacci_if_else.0": Case(stdout=b"0\n", stdin=b"0\n"),
+    "fibonacci_if_else.1": Case(stdout=b"1\n", stdin=b"1\n"),
+    "fibonacci_if_else.10": Case(stdout=b"55\n", stdin=b"10\n"),
     "gcd.common_factor": Case(stdout=b"6\n", stdin=b"48 18\n"),
     "gcd.coprime": Case(stdout=b"1\n", stdin=b"35 64\n"),
     "gcd.equal": Case(stdout=b"21\n", stdin=b"21 21\n"),
@@ -53,6 +56,11 @@ CASES = {
     "statement_bodies": Case(stdout=b"3\n4\n"),
     "empty_statement": Case(stdout=b"42\n", stdin=b"5 7 0 -3 0 42\n"),
     "logical_not": Case(stdout=b"1\n0\n0\n3\n0\n1\n42\n", stdin=b"0 42\n"),
+    "nested_if_else.inner_true": Case(stdout=b"3\n", stdin=b"1 1\n"),
+    "nested_if_else.inner_false": Case(stdout=b"2\n", stdin=b"1 0\n"),
+    "nested_if_else.else_if_true": Case(stdout=b"1\n", stdin=b"0 1\n"),
+    "nested_if_else.else_if_false": Case(stdout=b"0\n", stdin=b"0 0\n"),
+    "dangling_else": Case(stdout=b"2\n"),
     "expressions": Case(
         stdout=b"14\n20\n12\n6\n-2\n1\n3\n1\n1\n1\n0\n0\n1\n1\n1\n1\n1\n1\n1\n7\n7\n"
     ),

@@ -101,8 +101,13 @@ std::unique_ptr<Statement> Parser::parse_if() {
     consume(TokenKind::GroupBegin);
     auto condition = parse_expression();
     consume(TokenKind::GroupEnd);
-    auto body = parse_statement();
-    return std::make_unique<IfStatement>(std::move(condition), std::move(body));
+    auto then_branch = parse_statement();
+    std::unique_ptr<Statement> else_branch;
+    if (current_token().kind == TokenKind::Else) {
+        consume(TokenKind::Else);
+        else_branch = parse_statement();
+    }
+    return std::make_unique<IfStatement>(std::move(condition), std::move(then_branch), std::move(else_branch));
 }
 
 std::unique_ptr<Statement> Parser::parse_while() {

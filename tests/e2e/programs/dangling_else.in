@@ -1,0 +1,5 @@
+@If @GroupBegin 1 @GroupEnd
+    @If @GroupBegin 0 @GroupEnd
+        @Output 1 @StatementEnd
+    @Else
+        @Output 2 @StatementEnd

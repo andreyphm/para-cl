@@ -20,7 +20,7 @@ Statement = Block
 
 Block = @BlockBegin, { Statement }, @BlockEnd
 
-IfStatement = @If, @GroupBegin, Expression, @GroupEnd, Statement
+IfStatement = @If, @GroupBegin, Expression, @GroupEnd, Statement, [ @Else, Statement ]
 
 WhileStatement = @While, @GroupBegin, Expression, @GroupEnd, Statement
 

@@ -116,6 +116,8 @@ const SyntaxCase syntax_cases[] = {
     {"MissingIfGroupBegin", {K::If, "1", K::GroupEnd, K::BlockBegin, K::BlockEnd}, 1, K::GroupBegin},
     {"MissingIfGroupEnd", {K::If, K::GroupBegin, "1", K::BlockBegin, K::BlockEnd}, 3, K::GroupEnd},
     {"MissingIfBody", {K::If, K::GroupBegin, "1", K::GroupEnd}, 4},
+    {"UnmatchedElse", {K::Else, K::StatementEnd}, 0},
+    {"MissingElseBody", {K::If, K::GroupBegin, "1", K::GroupEnd, K::StatementEnd, K::Else}, 6},
     {"EmptyWhileCondition", {K::While, K::GroupBegin, K::GroupEnd, K::BlockBegin, K::BlockEnd}, 2},
     {"MissingWhileGroupBegin", {K::While, "0", K::GroupEnd, K::BlockBegin, K::BlockEnd}, 1, K::GroupBegin},
     {"MissingWhileGroupEnd", {K::While, K::GroupBegin, "0", K::BlockBegin, K::BlockEnd}, 3, K::GroupEnd},

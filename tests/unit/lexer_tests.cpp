@@ -188,11 +188,11 @@ TEST(LexerTest, KeepsKeywordPrefixesInsideIdentifiers) {
 }
 
 TEST(LexerTest, RecognizesKeywordsAndTracksTheirPositions) {
-    expect_fixed_sequence({TokenKind::If, TokenKind::While, TokenKind::Output}, false);
+    expect_fixed_sequence({TokenKind::If, TokenKind::Else, TokenKind::While, TokenKind::Output}, false);
 }
 
 TEST(LexerTest, MatchesOnlyCompleteCaseSensitiveKeywords) {
-    for (const TokenKind kind : {TokenKind::If, TokenKind::While, TokenKind::Output}) {
+    for (const TokenKind kind : {TokenKind::If, TokenKind::Else, TokenKind::While, TokenKind::Output}) {
         std::string changed_case = spelling_for(kind);
         for (char& symbol : changed_case) {
             if (symbol >= 'a' && symbol <= 'z') {

@@ -1,0 +1,9 @@
+@If @GroupBegin @Input @GroupEnd @BlockBegin
+    @If @GroupBegin @Input @GroupEnd
+        @Output 3 @StatementEnd
+    @Else
+        @Output 2 @StatementEnd
+@BlockEnd @Else @If @GroupBegin @Input @GroupEnd
+    @Output 1 @StatementEnd
+@Else
+    @Output 0 @StatementEnd

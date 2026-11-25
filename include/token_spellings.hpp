@@ -13,6 +13,7 @@ struct TokenSpelling {
 
 inline constexpr TokenSpelling keyword_spellings[] = {
     {"if", TokenKind::If},
+    {"else", TokenKind::Else},
     {"while", TokenKind::While},
     {"print", TokenKind::Output},
 };

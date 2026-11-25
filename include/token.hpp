@@ -11,6 +11,7 @@ enum class TokenKind {
     Identifier,
 
     If,
+    Else,
     While,
     Input,
     Output,
