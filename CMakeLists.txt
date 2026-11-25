@@ -9,12 +9,12 @@ include(CTest)
 include(cmake/warnings.cmake)
 
 add_library(para_cl_core STATIC
-    source/ast.cpp
-    source/runtime_context.cpp
-    source/token.cpp
-    source/lexer.cpp
-    source/parser.cpp)
-target_include_directories(para_cl_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
+    frontend/source/ast.cpp
+    frontend/source/token.cpp
+    frontend/source/lexer.cpp
+    frontend/source/parser.cpp
+    interpreter/source/runtime_context.cpp)
+target_include_directories(para_cl_core PUBLIC frontend/include interpreter/include)
 para_cl_enable_warnings(para_cl_core)
 
 if(BUILD_TESTING)
@@ -33,6 +33,6 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-add_executable(para_cl source/main.cpp source/input.cpp)
+add_executable(para_cl main.cpp frontend/source/input.cpp)
 target_link_libraries(para_cl PRIVATE para_cl_core)
 para_cl_enable_warnings(para_cl)

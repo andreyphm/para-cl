@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 
 TEST_DIR = Path(__file__).resolve().parent
-TOKEN_SPELLINGS = TEST_DIR.parents[1] / "include" / "token_spellings.hpp"
+TOKEN_SPELLINGS = TEST_DIR.parents[1] / "frontend" / "include" / "token_spellings.hpp"
 
 
 @dataclass(frozen=True)

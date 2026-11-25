@@ -1,7 +1,7 @@
 # ParaCL grammar
 
 `Program` is the start rule. Names prefixed with `@` are token kinds. The
-[token spellings](../include/token_spellings.hpp) give the source text for
+[token spellings](../frontend/include/token_spellings.hpp) give the source text for
 keywords, operators, and delimiters. The lexer supplies `@EndOfFile` at the end of the source.
 
 In the rules below, a comma means sequence, `|` separates alternatives,

@@ -73,25 +73,25 @@ PowerShell
 
 ## Grammar
 
-The [ParaCL grammar](docs/grammar.md) uses token kinds. You can change how a keyword, operator, or delimiter is written by editing its entry in the [token spelling table](include/token_spellings.hpp). The grammar rules still refer to the same token kind.
+The [ParaCL grammar](docs/grammar.md) uses token kinds. You can change how a keyword, operator, or delimiter is written by editing its entry in the [token spelling table](frontend/include/token_spellings.hpp). The grammar rules still refer to the same token kind.
 
 ## How a program runs
 
 ### Lexer
 
-Implementation: [source/lexer.cpp](source/lexer.cpp), [include/token_spellings.hpp](include/token_spellings.hpp).
+Implementation: [frontend/source/lexer.cpp](frontend/source/lexer.cpp), [frontend/include/token_spellings.hpp](frontend/include/token_spellings.hpp).
 
 The lexer splits the source into tokens and records the starting line and column of each one. It skips whitespace and `//` line comments. When two operators share a prefix, it takes the longest match. It reads a whole identifier before checking for keywords.
 
 ### Parser
 
-Implementation: [source/parser.cpp](source/parser.cpp).
+Implementation: [frontend/source/parser.cpp](frontend/source/parser.cpp).
 
 The recursive-descent parser consumes the token sequence and builds the AST. Each level of expression precedence has its own rule.
 
 ### AST execution
 
-Implementation: [include/ast.hpp](include/ast.hpp), [source/ast.cpp](source/ast.cpp).
+Implementation: [frontend/include/ast.hpp](frontend/include/ast.hpp), [frontend/source/ast.cpp](frontend/source/ast.cpp).
 
 The interpreter walks the tree. Expressions evaluate to an `int`, while statements perform actions.
 
@@ -100,7 +100,7 @@ Binary operators evaluate the left operand first. Comparisons and logical operat
 
 ### Runtime context
 
-Implementation: [source/runtime_context.cpp](source/runtime_context.cpp).
+Implementation: [interpreter/source/runtime_context.cpp](interpreter/source/runtime_context.cpp).
 
 Execution starts in a global scope. Entering a block opens a scope, and leaving the block removes the variables created there. Assignment updates the nearest existing variable with that name or creates it in the current scope. Reading an unknown variable is a runtime error. The context also supplies the streams used by `?` and `print`.
 
@@ -133,22 +133,26 @@ The end-to-end tests launch the executable with a source file and input data, th
 ├── examples/
 │   ├── factorial.paracl
 │   └── fibonacci.paracl
-├── include/
-│   ├── ast.hpp                   # Expression and statement nodes
-│   ├── lexer.hpp
-│   ├── parser.hpp
-│   ├── runtime_context.hpp       # Variable scopes and I/O streams
-│   ├── token.hpp                 # Token kinds and source positions
-│   └── token_spellings.hpp       # Keywords, operators, and delimiters
-├── source/
-│   ├── ast.cpp
-│   ├── input.cpp                 # Source file reader
-│   ├── input.hpp
-│   ├── lexer.cpp
-│   ├── main.cpp                  # CLI entry point
-│   ├── parser.cpp
-│   ├── runtime_context.cpp
-│   └── token.cpp
+├── frontend/
+│   ├── include/
+│   │   ├── ast.hpp               # Expression and statement nodes
+│   │   ├── input.hpp
+│   │   ├── lexer.hpp
+│   │   ├── parser.hpp
+│   │   ├── token.hpp             # Token kinds and source positions
+│   │   └── token_spellings.hpp   # Keywords, operators, and delimiters
+│   └── source/
+│       ├── ast.cpp
+│       ├── input.cpp             # Source file reader
+│       ├── lexer.cpp
+│       ├── parser.cpp
+│       └── token.cpp
+├── interpreter/
+│   ├── include/
+│   │   └── runtime_context.hpp   # Variable scopes and I/O streams
+│   └── source/
+│       └── runtime_context.cpp
+├── main.cpp                      # CLI entry point
 └── tests/
     ├── CMakeLists.txt
     ├── unit/
