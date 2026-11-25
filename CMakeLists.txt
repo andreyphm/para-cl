@@ -46,7 +46,7 @@ if(ENABLE_LLVM_IR_GEN)
     add_library(para_cl_codegen STATIC backend/source/codegen.cpp)
     target_include_directories(para_cl_codegen PUBLIC backend/include PRIVATE ${LLVM_INCLUDE_DIRS})
     target_compile_options(para_cl_codegen PRIVATE ${para_cl_llvm_flags})
-    target_link_libraries(para_cl_codegen PRIVATE LLVMCore LLVMSupport)
+    target_link_libraries(para_cl_codegen PRIVATE para_cl_core LLVMCore LLVMSupport)
     para_cl_enable_warnings(para_cl_codegen)
 
     target_compile_definitions(para_cl PRIVATE ENABLE_LLVM_IR_GEN)

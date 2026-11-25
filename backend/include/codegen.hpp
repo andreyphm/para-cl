@@ -4,6 +4,8 @@
 
 namespace ParaCL {
 
-void emit_llvm_ir(std::ostream& output);
+class Program;
+
+void emit_llvm_ir(const Program& program, std::ostream& output);
 
 } // namespace ParaCL

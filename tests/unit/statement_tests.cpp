@@ -20,9 +20,10 @@
 namespace ParaCL {
 namespace {
 
-TEST(StatementVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
-    struct RecordingVisitor : StatementVisitor {
+TEST(AstVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
+    struct RecordingVisitor : AstVisitor {
         std::ostringstream events;
+        void visit_number(int) override { events << "number "; }
         void visit_empty() override { events << "empty "; }
         void visit_output(const Expression&) override { events << "output "; }
         void visit_expression_statement(const Expression&) override { events << "expression "; }

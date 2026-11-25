@@ -8,6 +8,7 @@
 namespace ParaCL {
 
 class RuntimeContext;
+class AstVisitor;
 
 enum class BinaryOperator {
     Add,
@@ -33,6 +34,7 @@ enum class UnaryOperator {
 class Expression {
 public:
     virtual int evaluate(RuntimeContext&) const = 0;
+    virtual void accept(AstVisitor& visitor) const;
     virtual ~Expression() = default;
 };
 
@@ -40,6 +42,7 @@ class NumberExpression : public Expression {
 public:
     explicit NumberExpression(int value) : value_(value) {}
     int evaluate(RuntimeContext&) const override { return value_; }
+    void accept(AstVisitor& visitor) const override;
 private:
     int value_;
 };
@@ -88,22 +91,23 @@ private:
 
 class Statement;
 
-class StatementVisitor {
+class AstVisitor {
 public:
     virtual void visit_empty() = 0;
     virtual void visit_output(const Expression& expression) = 0;
     virtual void visit_expression_statement(const Expression& expression) = 0;
     virtual void visit_if(const Expression& condition, const Statement& then_branch, const Statement* else_branch) = 0;
     virtual void visit_while(const Expression& condition, const Statement& body) = 0;
+    virtual void visit_number(int number) = 0;
     virtual void enter_block() = 0;
     virtual void leave_block() = 0;
-    virtual ~StatementVisitor() = default;
+    virtual ~AstVisitor() = default;
 };
 
 class Statement {
 public:
     virtual void execute(RuntimeContext&) const = 0;
-    virtual void accept(StatementVisitor& visitor) const = 0;
+    virtual void accept(AstVisitor& visitor) const = 0;
     virtual ~Statement() = default;
 };
 
@@ -111,7 +115,7 @@ class ExpressionStatement : public Statement {
 public:
     explicit ExpressionStatement(std::unique_ptr<Expression> expression);
     void execute(RuntimeContext& context) const override { expression_->evaluate(context); }
-    void accept(StatementVisitor& visitor) const override { visitor.visit_expression_statement(*expression_); }
+    void accept(AstVisitor& visitor) const override { visitor.visit_expression_statement(*expression_); }
 private:
     std::unique_ptr<Expression> expression_;
 };
@@ -120,7 +124,7 @@ class OutputStatement : public Statement {
 public:
     explicit OutputStatement(std::unique_ptr<Expression> expression);
     void execute(RuntimeContext& context) const override;
-    void accept(StatementVisitor& visitor) const override { visitor.visit_output(*expression_); }
+    void accept(AstVisitor& visitor) const override { visitor.visit_output(*expression_); }
 private:
     std::unique_ptr<Expression> expression_;
 };
@@ -129,7 +133,7 @@ class BlockStatement : public Statement {
 public:
     explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements);
     void execute(RuntimeContext& context) const override;
-    void accept(StatementVisitor& visitor) const override;
+    void accept(AstVisitor& visitor) const override;
 private:
     std::vector<std::unique_ptr<Statement>> statements_;
 };
@@ -139,7 +143,7 @@ public:
     IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
                 std::unique_ptr<Statement> else_branch = nullptr);
     void execute(RuntimeContext& context) const override;
-    void accept(StatementVisitor& visitor) const override {
+    void accept(AstVisitor& visitor) const override {
         visitor.visit_if(*condition_, *then_branch_, else_branch_.get());
     }
 private:
@@ -152,7 +156,7 @@ class WhileStatement : public Statement {
 public:
     WhileStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> body);
     void execute(RuntimeContext& context) const override;
-    void accept(StatementVisitor& visitor) const override { visitor.visit_while(*condition_, *body_); }
+    void accept(AstVisitor& visitor) const override { visitor.visit_while(*condition_, *body_); }
 private:
     std::unique_ptr<Expression> condition_;
     std::unique_ptr<Statement> body_;
@@ -161,7 +165,7 @@ private:
 class EmptyStatement : public Statement {
 public:
     void execute(RuntimeContext&) const override {}
-    void accept(StatementVisitor& visitor) const override { visitor.visit_empty(); }
+    void accept(AstVisitor& visitor) const override { visitor.visit_empty(); }
 };
 
 
@@ -169,7 +173,7 @@ class Program {
 public:
     explicit Program(std::vector<std::unique_ptr<Statement>> statements);
     void execute(RuntimeContext& context) const;
-    void accept(StatementVisitor& visitor) const;
+    void accept(AstVisitor& visitor) const;
 private:
     std::vector<std::unique_ptr<Statement>> statements_;
 };

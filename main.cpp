@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         const auto program = parser.parse_program();
         if (emit_llvm) {
 #ifdef ENABLE_LLVM_IR_GEN
-            ParaCL::emit_llvm_ir(std::cout);
+            ParaCL::emit_llvm_ir(*program, std::cout);
             if (!std::cout.flush()) {
                 throw std::runtime_error("Failed to write LLVM IR");
             }

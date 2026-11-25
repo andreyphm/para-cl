@@ -1,0 +1,7 @@
+@Output 42 @StatementEnd
+@BlockBegin
+    @Output 0 @StatementEnd
+    @BlockBegin @Output 2147483647 @StatementEnd @BlockEnd
+@BlockEnd
+@StatementEnd
+@Output 7 @StatementEnd

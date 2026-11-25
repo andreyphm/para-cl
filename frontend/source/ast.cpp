@@ -7,6 +7,14 @@
 
 namespace ParaCL {
 
+void Expression::accept(AstVisitor&) const {
+    throw std::runtime_error("Visiting this expression is not implemented");
+}
+
+void NumberExpression::accept(AstVisitor& visitor) const {
+    visitor.visit_number(value_);
+}
+
 BinaryExpression::BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
     : operation_(operation), left_(std::move(left)), right_(std::move(right)) {
     if (!left_ || !right_) {
@@ -118,7 +126,7 @@ void BlockStatement::execute(RuntimeContext& context) const {
     }
 }
 
-void BlockStatement::accept(StatementVisitor& visitor) const {
+void BlockStatement::accept(AstVisitor& visitor) const {
     visitor.enter_block();
     for (const auto& statement : statements_) {
         statement->accept(visitor);
@@ -176,7 +184,7 @@ void Program::execute(RuntimeContext& context) const {
     }
 }
 
-void Program::accept(StatementVisitor& visitor) const {
+void Program::accept(AstVisitor& visitor) const {
     for (const auto& statement : statements_) {
         statement->accept(visitor);
     }

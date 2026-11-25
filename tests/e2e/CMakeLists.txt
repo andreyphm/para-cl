@@ -18,3 +18,12 @@ foreach(test_case IN LISTS test_cases)
         COMMAND Python3::Interpreter "${test_script}" "$<TARGET_FILE:para_cl>" "${test_case}")
     set_tests_properties("e2e.${test_case}" PROPERTIES LABELS e2e TIMEOUT 10)
 endforeach()
+
+if(ENABLE_LLVM_IR_GEN)
+    add_test(NAME e2e.emit_llvm
+        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>")
+    set_tests_properties(e2e.emit_llvm PROPERTIES LABELS e2e TIMEOUT 15)
+    add_test(NAME e2e.emit_llvm_print_literals
+        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>" --run-print)
+    set_tests_properties(e2e.emit_llvm_print_literals PROPERTIES LABELS e2e TIMEOUT 15 SKIP_RETURN_CODE 77)
+endif()
