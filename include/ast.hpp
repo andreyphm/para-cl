@@ -133,6 +133,11 @@ private:
     std::unique_ptr<Statement> body_;
 };
 
+class EmptyStatement : public Statement {
+public:
+    void execute(RuntimeContext&) const override {}
+};
+
 
 class Program {
 public:

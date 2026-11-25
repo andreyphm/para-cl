@@ -30,6 +30,7 @@ private:
     std::unique_ptr<Statement> parse_while();
     std::unique_ptr<Statement> parse_output();
     std::unique_ptr<Statement> parse_expression_statement();
+    std::unique_ptr<Statement> parse_empty_statement();
 
     std::unique_ptr<Expression> parse_expression();
     std::unique_ptr<Expression> parse_assignment();

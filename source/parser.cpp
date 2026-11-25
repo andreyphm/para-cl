@@ -80,6 +80,7 @@ std::unique_ptr<Statement> Parser::parse_statement() {
         case TokenKind::If: return parse_if();
         case TokenKind::While: return parse_while();
         case TokenKind::Output: return parse_output();
+        case TokenKind::StatementEnd: return parse_empty_statement();
         default: return parse_expression_statement();
     }
 }
@@ -127,6 +128,11 @@ std::unique_ptr<Statement> Parser::parse_expression_statement() {
 
 std::unique_ptr<Expression> Parser::parse_expression() {
     return parse_assignment();
+}
+
+std::unique_ptr<Statement> Parser::parse_empty_statement() {
+    consume(TokenKind::StatementEnd);
+    return std::make_unique<EmptyStatement>();
 }
 
 std::unique_ptr<Expression> Parser::parse_assignment() {

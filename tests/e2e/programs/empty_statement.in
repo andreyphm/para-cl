@@ -1,0 +1,4 @@
+@StatementEnd
+@While @GroupBegin @Input @GroupEnd @BlockBegin @BlockEnd
+@While @GroupBegin @Input @GroupEnd @StatementEnd
+@Output @Input @StatementEnd

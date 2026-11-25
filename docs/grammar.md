@@ -14,6 +14,7 @@ Statement = Block
           | IfStatement
           | WhileStatement
           | OutputStatement
+          | EmptyStatement
           | ExpressionStatement
 
 
@@ -26,6 +27,8 @@ WhileStatement = @While, @GroupBegin, Expression, @GroupEnd, Statement
 OutputStatement = @Output, Expression, @StatementEnd
 
 ExpressionStatement = Expression, @StatementEnd
+
+EmptyStatement = @StatementEnd
 
 
 Expression = Assignment
