@@ -130,8 +130,24 @@ public:
         builder_.SetInsertPoint(end_block);
     }
 
-    void visit_while(const Expression&, const Statement&) override {
-        throw std::runtime_error("LLVM IR generation for while statements is not implemented");
+    void visit_while(const Expression& condition, const Statement& body) override {
+        auto* function = builder_.GetInsertBlock()->getParent();
+        auto& context = module_.getContext();
+        auto* condition_block = llvm::BasicBlock::Create(context, "while.cond", function);
+        auto* body_block = llvm::BasicBlock::Create(context, "while.body", function);
+        auto* end_block = llvm::BasicBlock::Create(context, "while.end", function);
+        builder_.CreateBr(condition_block);
+
+        builder_.SetInsertPoint(condition_block);
+        condition.accept(*this);
+        auto* is_true = builder_.CreateICmpNE(expression_value_, builder_.getInt32(0));
+        builder_.CreateCondBr(is_true, body_block, end_block);
+
+        builder_.SetInsertPoint(body_block);
+        body.accept(*this);
+        builder_.CreateBr(condition_block);
+
+        builder_.SetInsertPoint(end_block);
     }
 
 private:

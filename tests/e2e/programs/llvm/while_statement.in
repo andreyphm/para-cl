@@ -1,1 +1,27 @@
+@While @GroupBegin 1 @LogicalAnd 0 @GroupEnd @BlockBegin
+    @If @GroupBegin 1 @GroupEnd @Output 99 @StatementEnd
+@BlockEnd
+@Output 7 @StatementEnd
 @While @GroupBegin 0 @GroupEnd @StatementEnd
+@While @GroupBegin 0 @LogicalAnd @GroupBegin 1 @Div 0 @GroupEnd @GroupEnd
+    @Output 98 @StatementEnd
+@If @GroupBegin 1 @GroupEnd @BlockBegin
+    @While @GroupBegin 3 @Less 2 @GroupEnd @Output 97 @StatementEnd
+    @Output 8 @StatementEnd
+@BlockEnd
+@Output 9 @StatementEnd
+
+
+@While @GroupBegin @Minus 2 @GroupEnd @BlockBegin
+    @Output 1 @StatementEnd
+    @While @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
+    @If @GroupBegin 1 @GroupEnd @Output 2 @StatementEnd
+@BlockEnd
+@Output 98 @StatementEnd
+
+
+@While @GroupBegin 1 @GroupEnd @BlockBegin
+    @Output 1 @StatementEnd
+    @While @GroupBegin 0 @LogicalOr 3 @GroupEnd @Output 2 @StatementEnd
+    @Output 99 @StatementEnd
+@BlockEnd
