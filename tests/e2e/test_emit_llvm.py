@@ -33,7 +33,7 @@ def main(executable: str) -> None:
         ("print_in_block", None),
         ("expression_statement", "expression"),
         ("unsupported_after_print", "expression"),
-        ("if_statement", "if"),
+        ("if_statement", None),
         ("while_statement", "while"),
     ]
     with TemporaryDirectory() as directory:
@@ -62,5 +62,6 @@ if __name__ == "__main__":
         check_print(sys.argv[1], lli, "print_division", "2\n-2\n-2\n2\n0\n6\n")
         check_print(sys.argv[1], lli, "print_comparisons", "1\n0\n0\n1\n1\n0\n5\n0\n1\n0\n1\n0\n")
         check_print(sys.argv[1], lli, "print_short_circuit", "0\n0\n0\n1\n5\n0\n0\n1\n1\n1\n5\n0\n")
+        check_print(sys.argv[1], lli, "if_statement", "1\n2\n3\n4\n5\n")
     else:
         main(sys.argv[1])

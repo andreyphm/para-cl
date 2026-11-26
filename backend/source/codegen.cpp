@@ -108,8 +108,26 @@ public:
         expression_value_ = builder_.CreateZExt(comparison, builder_.getInt32Ty());
     }
 
-    void visit_if(const Expression&, const Statement&, const Statement*) override {
-        throw std::runtime_error("LLVM IR generation for if statements is not implemented");
+    void visit_if(const Expression& condition, const Statement& then_branch, const Statement* else_branch) override {
+        condition.accept(*this);
+        auto* is_true = builder_.CreateICmpNE(expression_value_, builder_.getInt32(0));
+        auto* function = builder_.GetInsertBlock()->getParent();
+        auto& context = module_.getContext();
+        auto* then_block = llvm::BasicBlock::Create(context, "if.then", function);
+        auto* else_block = else_branch ? llvm::BasicBlock::Create(context, "if.else", function) : nullptr;
+        auto* end_block = llvm::BasicBlock::Create(context, "if.end", function);
+        builder_.CreateCondBr(is_true, then_block, else_block ? else_block : end_block);
+
+        builder_.SetInsertPoint(then_block);
+        then_branch.accept(*this);
+        builder_.CreateBr(end_block);
+
+        if (else_branch) {
+            builder_.SetInsertPoint(else_block);
+            else_branch->accept(*this);
+            builder_.CreateBr(end_block);
+        }
+        builder_.SetInsertPoint(end_block);
     }
 
     void visit_while(const Expression&, const Statement&) override {

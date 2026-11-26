@@ -1,1 +1,13 @@
 @If @GroupBegin 1 @GroupEnd @StatementEnd
+@If @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
+@If @GroupBegin @Minus 2 @GroupEnd @Output 1 @StatementEnd
+
+@If @GroupBegin 1 @LogicalOr 0 @GroupEnd @BlockBegin
+    @If @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
+    @Else @Output 2 @StatementEnd
+    @Output 3 @StatementEnd
+@BlockEnd @Else @Output 99 @StatementEnd
+
+@If @GroupBegin 0 @GroupEnd @Output 99 @StatementEnd
+@Else @If @GroupBegin 1 @GroupEnd @Output 4 @StatementEnd
+@Output 5 @StatementEnd
