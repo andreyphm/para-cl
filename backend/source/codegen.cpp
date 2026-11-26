@@ -62,6 +62,10 @@ public:
     void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) override {
         left.accept(*this);
         auto* left_value = expression_value_;
+        if (operation == BinaryOperator::LogicalAnd || operation == BinaryOperator::LogicalOr) {
+            expression_value_ = emit_short_circuit(operation, left_value, right);
+            return;
+        }
         right.accept(*this);
         auto* right_value = expression_value_;
 
@@ -113,6 +117,34 @@ public:
     }
 
 private:
+    llvm::Value* emit_short_circuit(BinaryOperator operation, llvm::Value* left, const Expression& right) {
+        const bool is_or = (operation == BinaryOperator::LogicalOr);
+        auto* left_block = builder_.GetInsertBlock();
+        auto* function = left_block->getParent();
+        auto* rhs = llvm::BasicBlock::Create(module_.getContext(), is_or ? "or.rhs" : "and.rhs", function);
+        auto* merge = llvm::BasicBlock::Create(module_.getContext(), is_or ? "or.merge" : "and.merge", function);
+
+        auto* left_is_true = builder_.CreateICmpNE(left, builder_.getInt32(0));
+        if (is_or) {
+            builder_.CreateCondBr(left_is_true, merge, rhs);
+        } else {
+            builder_.CreateCondBr(left_is_true, rhs, merge);
+        }
+
+        builder_.SetInsertPoint(rhs);
+        right.accept(*this);
+        auto* right_is_true = builder_.CreateICmpNE(expression_value_, builder_.getInt32(0));
+        auto* right_end = builder_.GetInsertBlock();
+
+        builder_.CreateBr(merge);
+        builder_.SetInsertPoint(merge);
+        auto* result = builder_.CreatePHI(builder_.getInt1Ty(), 2, is_or ? "or.result" : "and.result");
+        result->addIncoming(builder_.getInt1(is_or), left_block);
+        result->addIncoming(right_is_true, right_end);
+
+        return builder_.CreateZExt(result, builder_.getInt32Ty());
+    }
+
     llvm::Module& module_;
     llvm::IRBuilder<>& builder_;
     llvm::Value* expression_value_ = nullptr;

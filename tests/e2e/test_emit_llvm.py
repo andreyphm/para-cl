@@ -61,5 +61,6 @@ if __name__ == "__main__":
         check_print(sys.argv[1], lli, "print_arithmetic", "4\n16\n12\n-10\n")
         check_print(sys.argv[1], lli, "print_division", "2\n-2\n-2\n2\n0\n6\n")
         check_print(sys.argv[1], lli, "print_comparisons", "1\n0\n0\n1\n1\n0\n5\n0\n1\n0\n1\n0\n")
+        check_print(sys.argv[1], lli, "print_short_circuit", "0\n0\n0\n1\n5\n0\n0\n1\n1\n1\n5\n0\n")
     else:
         main(sys.argv[1])
