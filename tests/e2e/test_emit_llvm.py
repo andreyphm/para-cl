@@ -5,7 +5,12 @@ import sys
 from tempfile import TemporaryDirectory
 from threading import Timer
 
-from test_cli import program_template, render_program
+from test_cli import EXPRESSION_OUTPUT, program_template, render_program
+
+
+def llvm_expressions() -> str:
+    shared, _ = program_template("expressions").split("\n\n\n")
+    return shared
 
 
 def check_print(executable: str, lli: str, name: str, expected: str) -> None:
@@ -55,27 +60,30 @@ def main(executable: str) -> None:
         ("empty_block", None),
         ("nested_blocks", None),
         ("print_in_block", None),
-        ("expression_statement", "expression"),
-        ("unsupported_after_print", "expression"),
+        ("expressions", None),
+        ("unsupported_after_print", "Visiting this expression is not implemented"),
         ("if_statement", None),
         ("while_statement", None),
     ]
     with TemporaryDirectory() as directory:
         source = Path(directory) / "program.paracl"
         for name, unsupported in cases:
-            template = program_template(f"llvm/{name}")
+            template = llvm_expressions() if name == "expressions" else program_template(f"llvm/{name}")
             source.write_text(render_program(template), encoding="utf-8")
             result = subprocess.run([executable, "--emit-llvm", str(source)],
                                     capture_output=True, text=True, timeout=5)
             if unsupported is None:
                 assert result.returncode == 0 and not result.stderr, result
                 assert "define i32 @main()" in result.stdout and "ret i32 0" in result.stdout, result
+                if name == "expressions":
+                    logical_operators = template.count("@LogicalAnd") + template.count("@LogicalOr")
+                    assert result.stdout.count("br i1 ") == logical_operators, result
                 if name == "while_statement":
                     body_end = result.stdout.split("\nif.end:", 1)[1].split("\n\n", 1)[0]
                     assert "br label %while.cond" in body_end, result
             else:
                 assert result.returncode != 0 and not result.stdout, result
-                assert f"LLVM IR generation for {unsupported} statements is not implemented" in result.stderr, result
+                assert unsupported in result.stderr, result
 
 
 if __name__ == "__main__":
@@ -90,11 +98,7 @@ if __name__ == "__main__":
             check_loop_prefix(sys.argv[1], lli, repeated, [1, 2] * 4)
             check_loop_prefix(sys.argv[1], lli, nested, [1, 2, 2, 2, 2])
             sys.exit(0)
-        check_print(sys.argv[1], lli, "print_literals", "42\n0\n2147483647\n7\n-1\n-2147483647\n-7\n5\n1\n0\n0\n-1\n")
-        check_print(sys.argv[1], lli, "print_arithmetic", "4\n16\n12\n-10\n")
-        check_print(sys.argv[1], lli, "print_division", "2\n-2\n-2\n2\n0\n6\n")
-        check_print(sys.argv[1], lli, "print_comparisons", "1\n0\n0\n1\n1\n0\n5\n0\n1\n0\n1\n0\n")
-        check_print(sys.argv[1], lli, "print_short_circuit", "0\n0\n0\n1\n5\n0\n0\n1\n1\n1\n5\n0\n")
+        check_print_program(sys.argv[1], lli, llvm_expressions(), EXPRESSION_OUTPUT)
         check_print(sys.argv[1], lli, "if_statement", "1\n2\n3\n4\n5\n")
     else:
         main(sys.argv[1])

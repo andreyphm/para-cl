@@ -55,8 +55,8 @@ public:
         throw std::logic_error("Unknown unary operator");
     }
 
-    void visit_expression_statement(const Expression&) override {
-        throw std::runtime_error("LLVM IR generation for expression statements is not implemented");
+    void visit_expression_statement(const Expression& expression) override {
+        expression.accept(*this);
     }
 
     void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) override {

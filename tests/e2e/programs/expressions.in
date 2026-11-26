@@ -1,3 +1,70 @@
+@Output 42 @StatementEnd
+@BlockBegin
+    @Output 0 @StatementEnd
+    @BlockBegin @Output 2147483647 @StatementEnd @BlockEnd
+@BlockEnd
+@StatementEnd
+@Output 7 @StatementEnd
+@Output @Minus 1 @StatementEnd
+@Output @Minus 2147483647 @StatementEnd
+@Output @Plus @GroupBegin @Minus 7 @GroupEnd @StatementEnd
+@Output @Minus @GroupBegin @Minus 5 @GroupEnd @StatementEnd
+@Output @LogicalNot 0 @StatementEnd
+@Output @LogicalNot 42 @StatementEnd
+@Output @LogicalNot @GroupBegin @Minus 1 @GroupEnd @StatementEnd
+@Output @Minus @GroupBegin @LogicalNot 0 @GroupEnd @StatementEnd
+
+@Output 10 @Minus 2 @Mul 3 @StatementEnd
+@Output @GroupBegin 10 @Minus 2 @GroupEnd @Mul @GroupBegin 5 @Minus 3 @GroupEnd @StatementEnd
+@Output 20 @Minus 5 @Minus 3 @StatementEnd
+@Output @Minus 4 @Plus 2 @Mul @Minus 3 @StatementEnd
+
+@Output 7 @Div 3 @StatementEnd
+@Output @Minus 7 @Div 3 @StatementEnd
+@Output 7 @Div @Minus 3 @StatementEnd
+@Output @Minus 7 @Div @Minus 3 @StatementEnd
+@Output 0 @Div 4 @StatementEnd
+@Output 24 @Div @GroupBegin 12 @Div 3 @GroupEnd @StatementEnd
+
+@Output 3 @Equal 3 @StatementEnd
+@Output @Minus 1 @Equal 1 @StatementEnd
+@Output 3 @NotEqual 3 @StatementEnd
+@Output @Minus 1 @NotEqual 1 @StatementEnd
+@Output @Minus 2 @Less 1 @StatementEnd
+@Output 3 @Less 3 @StatementEnd
+@Output @GroupBegin 3 @LessEqual 3 @GroupEnd @Plus 4 @StatementEnd
+@Output 1 @LessEqual @Minus 2 @StatementEnd
+@Output 1 @Greater @Minus 2 @StatementEnd
+@Output 3 @Greater 3 @StatementEnd
+@Output 3 @GreaterEqual 3 @StatementEnd
+@Output @Minus 2 @GreaterEqual 1 @StatementEnd
+
+@Output 0 @LogicalAnd 0 @StatementEnd
+@Output 0 @LogicalAnd @GroupBegin 1 @Div 0 @GroupEnd @StatementEnd
+@Output @Minus 2 @LogicalAnd 0 @StatementEnd
+@Output @Minus 2 @LogicalAnd 7 @StatementEnd
+@Output 4 @Plus @GroupBegin 2 @LogicalAnd @GroupBegin 3 @LogicalAnd 4 @GroupEnd @GroupEnd @StatementEnd
+@Output 2 @LogicalAnd 0 @LogicalAnd @GroupBegin 1 @Div 0 @GroupEnd @StatementEnd
+
+@Output 0 @LogicalOr 0 @StatementEnd
+@Output 0 @LogicalOr @Minus 2 @StatementEnd
+@Output 7 @LogicalOr 0 @StatementEnd
+@Output @Minus 2 @LogicalOr @GroupBegin 1 @Div 0 @GroupEnd @StatementEnd
+@Output 4 @Plus @GroupBegin 0 @LogicalOr @GroupBegin 0 @LogicalOr 7 @GroupEnd @GroupEnd @StatementEnd
+@Output @GroupBegin 0 @LogicalOr 0 @GroupEnd @LogicalOr @GroupBegin 2 @LogicalAnd 0 @GroupEnd @StatementEnd
+
+1 @StatementEnd
+@Output 41 @StatementEnd
+1 @Plus 2 @StatementEnd
+7 @Div @Minus 3 @StatementEnd
+@LogicalNot @GroupBegin @Minus 4 @GroupEnd @StatementEnd
+1 @Less 2 @StatementEnd
+@BlockBegin
+    0 @LogicalAnd @GroupBegin 1 @Div 0 @GroupEnd @StatementEnd
+    1 @LogicalOr @GroupBegin 1 @Div 0 @GroupEnd @StatementEnd
+@BlockEnd
+@Output 42 @StatementEnd
+
 @Output @Plus 2 @Plus 3 @Mul 4 @StatementEnd
 @Output @GroupBegin 2 @Plus 3 @GroupEnd @Mul 4 @StatementEnd
 @Output 20 @Minus 5 @Minus 3 @StatementEnd
@@ -15,6 +82,8 @@
 @Output 2 @Equal 2 @Equal 1 @StatementEnd
 @Output 2 @Equal 2 @LogicalAnd 3 @StatementEnd
 @Output 1 @LogicalOr 0 @LogicalAnd 0 @StatementEnd
+
+
 @Output x @Assign 0 @LogicalOr 5 @StatementEnd
 @Output x @StatementEnd
 a @Assign b @Assign 7 @StatementEnd

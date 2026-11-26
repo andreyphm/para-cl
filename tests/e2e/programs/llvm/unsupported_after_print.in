@@ -1,2 +1,2 @@
 @Output 42 @StatementEnd
-1 @StatementEnd
+@Input @StatementEnd

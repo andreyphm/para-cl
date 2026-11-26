@@ -10,6 +10,15 @@ from tempfile import TemporaryDirectory
 TEST_DIR = Path(__file__).resolve().parent
 TOKEN_SPELLINGS = TEST_DIR.parents[1] / "frontend" / "include" / "token_spellings.hpp"
 
+EXPRESSION_OUTPUT = (
+    "42\n0\n2147483647\n7\n-1\n-2147483647\n-7\n5\n1\n0\n0\n-1\n"
+    "4\n16\n12\n-10\n"
+    "2\n-2\n-2\n2\n0\n6\n"
+    "1\n0\n0\n1\n1\n0\n5\n0\n1\n0\n1\n0\n"
+    "0\n0\n0\n1\n5\n0\n0\n1\n1\n1\n5\n0\n"
+    "41\n42\n"
+    "14\n20\n12\n6\n-2\n1\n3\n1\n1\n1\n0\n0\n1\n1\n1\n1\n1\n"
+)
 
 @dataclass(frozen=True)
 class Case:
@@ -62,7 +71,7 @@ CASES = {
     "nested_if_else.else_if_false": Case(stdout=b"0\n", stdin=b"0 0\n"),
     "dangling_else": Case(stdout=b"2\n"),
     "expressions": Case(
-        stdout=b"14\n20\n12\n6\n-2\n1\n3\n1\n1\n1\n0\n0\n1\n1\n1\n1\n1\n1\n1\n7\n7\n"
+        stdout=EXPRESSION_OUTPUT.encode() + b"1\n1\n7\n7\n"
     ),
     "empty": Case(stdout=b""),
 }

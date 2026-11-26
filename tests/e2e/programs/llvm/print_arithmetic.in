@@ -1,4 +1,0 @@
-@Output 10 @Minus 2 @Mul 3 @StatementEnd
-@Output @GroupBegin 10 @Minus 2 @GroupEnd @Mul @GroupBegin 5 @Minus 3 @GroupEnd @StatementEnd
-@Output 20 @Minus 5 @Minus 3 @StatementEnd
-@Output @Minus 4 @Plus 2 @Mul @Minus 3 @StatementEnd
