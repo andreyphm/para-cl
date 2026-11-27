@@ -1,2 +1,2 @@
 @Output 42 @StatementEnd
-@Input @StatementEnd
+unknown_variable @StatementEnd

@@ -7,23 +7,11 @@
 
 namespace ParaCL {
 
-void Expression::accept(AstVisitor&) const {
-    throw std::runtime_error("Visiting this expression is not implemented");
-}
-
-void NumberExpression::accept(AstVisitor& visitor) const {
-    visitor.visit_number(value_);
-}
-
 BinaryExpression::BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
     : operation_(operation), left_(std::move(left)), right_(std::move(right)) {
     if (!left_ || !right_) {
         throw std::invalid_argument("Binary expression operands must not be null");
     }
-}
-
-void BinaryExpression::accept(AstVisitor& visitor) const {
-    visitor.visit_binary(operation_, *left_, *right_);
 }
 
 int BinaryExpression::evaluate(RuntimeContext& context) const {
@@ -69,10 +57,6 @@ int UnaryExpression::evaluate(RuntimeContext& context) const {
     }
 
     throw std::logic_error("Unknown unary operator");
-}
-
-void UnaryExpression::accept(AstVisitor& visitor) const {
-    visitor.visit_unary(operation_, *operand_);
 }
 
 int VariableExpression::evaluate(RuntimeContext& context) const {
@@ -134,14 +118,6 @@ void BlockStatement::execute(RuntimeContext& context) const {
     }
 }
 
-void BlockStatement::accept(AstVisitor& visitor) const {
-    visitor.enter_block();
-    for (const auto& statement : statements_) {
-        statement->accept(visitor);
-    }
-    visitor.leave_block();
-}
-
 IfStatement::IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
                          std::unique_ptr<Statement> else_branch)
     : condition_(std::move(condition)), then_branch_(std::move(then_branch)),
@@ -189,12 +165,6 @@ Program::Program(std::vector<std::unique_ptr<Statement>> statements) : statement
 void Program::execute(RuntimeContext& context) const {
     for (const auto& statement : statements_) {
         statement->execute(context);
-    }
-}
-
-void Program::accept(AstVisitor& visitor) const {
-    for (const auto& statement : statements_) {
-        statement->accept(visitor);
     }
 }
 

@@ -28,6 +28,7 @@ TEST(AstVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
         void visit_binary(BinaryOperator, const Expression&, const Expression&) override { events << "binary "; }
         void visit_empty() override { events << "empty "; }
         void visit_output(const Expression&) override { events << "output "; }
+        void visit_input() override { events << "input "; }
         void visit_expression_statement(const Expression&) override { events << "expression "; }
         void visit_if(const Expression&, const Statement& then_branch, const Statement* else_branch) override {
             events << "if ";
@@ -49,6 +50,8 @@ TEST(AstVisitorTest, VisitsStatementsInOrderAndPreservesBlockBoundaries) {
     RecordingVisitor visitor;
     parser.parse_program()->accept(visitor);
     EXPECT_EQ(visitor.events.str(), "expression { if output else { } while { empty } } if empty ");
+    InputExpression{}.accept(visitor);
+    EXPECT_EQ(visitor.events.str(), "expression { if output else { } while { empty } } if empty input ");
 }
 
 TEST(ExpressionStatementTest, ExecutesAssignmentThroughBaseInterface) {

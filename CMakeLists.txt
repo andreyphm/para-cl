@@ -44,6 +44,7 @@ if(ENABLE_LLVM_IR_GEN)
     separate_arguments(para_cl_llvm_flags NATIVE_COMMAND "${LLVM_DEFINITIONS}")
 
     add_library(para_cl_codegen STATIC backend/source/codegen.cpp)
+    add_library(para_cl_runtime SHARED backend/source/runtime_io.cpp)
     target_include_directories(para_cl_codegen PUBLIC backend/include PRIVATE ${LLVM_INCLUDE_DIRS})
     target_compile_options(para_cl_codegen PRIVATE ${para_cl_llvm_flags})
     target_link_libraries(para_cl_codegen PRIVATE para_cl_core LLVMCore LLVMSupport)

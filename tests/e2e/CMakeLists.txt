@@ -24,9 +24,9 @@ if(ENABLE_LLVM_IR_GEN)
         COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>")
     set_tests_properties(e2e.emit_llvm PROPERTIES LABELS e2e TIMEOUT 15)
     add_test(NAME e2e.emit_llvm_print_literals
-        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>" --run-print)
+        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>" --run-print "$<TARGET_FILE:para_cl_runtime>")
     set_tests_properties(e2e.emit_llvm_print_literals PROPERTIES LABELS e2e TIMEOUT 15 SKIP_RETURN_CODE 77)
     add_test(NAME e2e.emit_llvm_while_iterations
-        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>" --run-loops)
+        COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/test_emit_llvm.py" "$<TARGET_FILE:para_cl>" --run-loops "$<TARGET_FILE:para_cl_runtime>")
     set_tests_properties(e2e.emit_llvm_while_iterations PROPERTIES LABELS e2e TIMEOUT 25 SKIP_RETURN_CODE 77)
 endif()

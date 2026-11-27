@@ -26,12 +26,15 @@ public:
 
     void visit_output(const Expression& expression) override {
         expression.accept(*this);
-        auto* printf_type = llvm::FunctionType::get(builder_.getInt32Ty(), {builder_.getPtrTy()}, true);
-        const auto print_function = module_.getOrInsertFunction("printf", printf_type);
-        if (!output_format_) {
-            output_format_ = builder_.CreateGlobalString("%d\n", "output_format");
-        }
-        builder_.CreateCall(print_function, {output_format_, expression_value_});
+        auto* output_func_type = llvm::FunctionType::get(builder_.getVoidTy(), {builder_.getInt32Ty()}, false);
+        const auto output_func = module_.getOrInsertFunction("paracl_output", output_func_type);
+        builder_.CreateCall(output_func, {expression_value_});
+    }
+
+    void visit_input() override {
+        auto* input_func_type = llvm::FunctionType::get(builder_.getInt32Ty(), false);
+        const auto input_func = module_.getOrInsertFunction("paracl_input", input_func_type);
+        expression_value_ = builder_.CreateCall(input_func);
     }
 
     void visit_number(int value) override {
@@ -182,7 +185,6 @@ private:
     llvm::Module& module_;
     llvm::IRBuilder<>& builder_;
     llvm::Value* expression_value_ = nullptr;
-    llvm::GlobalVariable* output_format_ = nullptr;
 };
 
 } // namespace

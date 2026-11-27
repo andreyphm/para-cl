@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 #include <string>
@@ -8,7 +9,8 @@
 namespace ParaCL {
 
 class RuntimeContext;
-class AstVisitor;
+class Expression;
+class Statement;
 
 enum class BinaryOperator {
     Add,
@@ -31,10 +33,28 @@ enum class UnaryOperator {
     LogicalNot
 };
 
+class AstVisitor {
+public:
+    virtual void visit_empty() = 0;
+    virtual void visit_output(const Expression& expression) = 0;
+    virtual void visit_input() = 0;
+    virtual void visit_expression_statement(const Expression& expression) = 0;
+    virtual void visit_if(const Expression& condition, const Statement& then_branch, const Statement* else_branch) = 0;
+    virtual void visit_while(const Expression& condition, const Statement& body) = 0;
+    virtual void visit_number(int number) = 0;
+    virtual void visit_unary(UnaryOperator operation, const Expression& operand) = 0;
+    virtual void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) = 0;
+    virtual void enter_block() = 0;
+    virtual void leave_block() = 0;
+    virtual ~AstVisitor() = default;
+};
+
 class Expression {
 public:
     virtual int evaluate(RuntimeContext&) const = 0;
-    virtual void accept(AstVisitor& visitor) const;
+    virtual void accept(AstVisitor&) const {
+        throw std::runtime_error("Visiting this expression is not implemented");
+    }
     virtual ~Expression() = default;
 };
 
@@ -42,7 +62,7 @@ class NumberExpression : public Expression {
 public:
     explicit NumberExpression(int value) : value_(value) {}
     int evaluate(RuntimeContext&) const override { return value_; }
-    void accept(AstVisitor& visitor) const override;
+    void accept(AstVisitor& visitor) const override { visitor.visit_number(value_); }
 private:
     int value_;
 };
@@ -51,7 +71,7 @@ class BinaryExpression : public Expression {
 public:
     BinaryExpression(BinaryOperator operation, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
     int evaluate(RuntimeContext& context) const override;
-    void accept(AstVisitor& visitor) const override;
+    void accept(AstVisitor& visitor) const override { visitor.visit_binary(operation_, *left_, *right_); }
 private:
     BinaryOperator operation_;
     std::unique_ptr<Expression> left_;
@@ -62,7 +82,7 @@ class UnaryExpression : public Expression {
 public:
     UnaryExpression(UnaryOperator operation, std::unique_ptr<Expression> operand);
     int evaluate(RuntimeContext& context) const override;
-    void accept(AstVisitor& visitor) const override;
+    void accept(AstVisitor& visitor) const override { visitor.visit_unary(operation_, *operand_); }
 private:
     UnaryOperator operation_;
     std::unique_ptr<Expression> operand_;
@@ -79,6 +99,7 @@ private:
 class InputExpression : public Expression {
 public:
     int evaluate(RuntimeContext& context) const override;
+    void accept(AstVisitor& visitor) const override { visitor.visit_input(); }
 };
 
 class AssignmentExpression : public Expression {
@@ -90,23 +111,6 @@ private:
     std::unique_ptr<Expression> expression_;
 };
 
-
-class Statement;
-
-class AstVisitor {
-public:
-    virtual void visit_empty() = 0;
-    virtual void visit_output(const Expression& expression) = 0;
-    virtual void visit_expression_statement(const Expression& expression) = 0;
-    virtual void visit_if(const Expression& condition, const Statement& then_branch, const Statement* else_branch) = 0;
-    virtual void visit_while(const Expression& condition, const Statement& body) = 0;
-    virtual void visit_number(int number) = 0;
-    virtual void visit_unary(UnaryOperator operation, const Expression& operand) = 0;
-    virtual void visit_binary(BinaryOperator operation, const Expression& left, const Expression& right) = 0;
-    virtual void enter_block() = 0;
-    virtual void leave_block() = 0;
-    virtual ~AstVisitor() = default;
-};
 
 class Statement {
 public:
@@ -137,7 +141,13 @@ class BlockStatement : public Statement {
 public:
     explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements);
     void execute(RuntimeContext& context) const override;
-    void accept(AstVisitor& visitor) const override;
+    void accept(AstVisitor& visitor) const override {
+        visitor.enter_block();
+        for (const auto& statement : statements_) {
+            statement->accept(visitor);
+        }
+        visitor.leave_block();
+    }
 private:
     std::vector<std::unique_ptr<Statement>> statements_;
 };
@@ -147,9 +157,7 @@ public:
     IfStatement(std::unique_ptr<Expression> condition, std::unique_ptr<Statement> then_branch,
                 std::unique_ptr<Statement> else_branch = nullptr);
     void execute(RuntimeContext& context) const override;
-    void accept(AstVisitor& visitor) const override {
-        visitor.visit_if(*condition_, *then_branch_, else_branch_.get());
-    }
+    void accept(AstVisitor& visitor) const override { visitor.visit_if(*condition_, *then_branch_, else_branch_.get()); }
 private:
     std::unique_ptr<Expression> condition_;
     std::unique_ptr<Statement> then_branch_;
@@ -177,7 +185,11 @@ class Program {
 public:
     explicit Program(std::vector<std::unique_ptr<Statement>> statements);
     void execute(RuntimeContext& context) const;
-    void accept(AstVisitor& visitor) const;
+    void accept(AstVisitor& visitor) const {
+        for (const auto& statement : statements_) {
+            statement->accept(visitor);
+        }
+    }
 private:
     std::vector<std::unique_ptr<Statement>> statements_;
 };

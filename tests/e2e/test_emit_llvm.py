@@ -13,34 +13,37 @@ def llvm_expressions() -> str:
     return shared
 
 
-def check_print(executable: str, lli: str, name: str, expected: str) -> None:
-    check_print_program(executable, lli, program_template(f"llvm/{name}"), expected)
-
-
-def check_print_program(executable: str, lli: str, template: str, expected: str) -> None:
+def check_print_program(executable: str, lli_command: list, template: str, expected: str,
+                        stdin: str = "", *, input_error: bool = False) -> None:
     with TemporaryDirectory() as directory:
         source = Path(directory) / "print.paracl"
+        ir = source.with_suffix(".ll")
         source.write_text(render_program(template), encoding="utf-8")
         generated = subprocess.run([executable, "--emit-llvm", str(source)],
                                    capture_output=True, text=True, timeout=5)
         assert generated.returncode == 0 and not generated.stderr, generated
-        executed = subprocess.run([lli, "-"], input=generated.stdout,
+        ir.write_text(generated.stdout, encoding="utf-8")
+        executed = subprocess.run([*lli_command, str(ir)], input=stdin,
                                   capture_output=True, text=True, timeout=5)
-        assert executed.returncode == 0 and not executed.stderr, executed
-        assert executed.stdout == expected, executed
-        interpreted = subprocess.run([executable, str(source)], capture_output=True, text=True, timeout=5)
-        assert interpreted.returncode == 0 and not interpreted.stderr, interpreted
-        assert interpreted.stdout == executed.stdout, interpreted
+        interpreted = subprocess.run([executable, str(source)], input=stdin,
+                                     capture_output=True, text=True, timeout=5)
+        if input_error:
+            assert executed.returncode != 0 and "paracl_input error" in executed.stderr, executed
+            assert interpreted.returncode != 0 and "Failed to read int value" in interpreted.stderr, interpreted
+        else:
+            assert executed.returncode == 0 and not executed.stderr, executed
+            assert interpreted.returncode == 0 and not interpreted.stderr, interpreted
+        assert executed.stdout == interpreted.stdout == expected, (executed, interpreted)
 
 
-def check_loop_prefix(executable: str, lli: str, template: str, expected: list) -> None:
+def check_loop_prefix(executable: str, lli_command: list, template: str, expected: list) -> None:
     with TemporaryDirectory() as directory:
         source = Path(directory) / "loop.paracl"
         ir = source.with_suffix(".ll")
         source.write_text(render_program(template), encoding="utf-8")
         with ir.open("wb") as output:
             subprocess.run([executable, "--emit-llvm", str(source)], stdout=output, check=True, timeout=5)
-        with subprocess.Popen([lli, str(ir)], stdout=subprocess.PIPE, text=True) as process:
+        with subprocess.Popen([*lli_command, str(ir)], stdout=subprocess.PIPE, text=True) as process:
             deadline = Timer(5, process.kill)
             deadline.start()
             try:
@@ -87,18 +90,28 @@ def main(executable: str) -> None:
 
 
 if __name__ == "__main__":
-    if sys.argv[2:] in (["--run-print"], ["--run-loops"]):
+    if len(sys.argv) == 4:
+        executable, mode, runtime = sys.argv[1:]
         lli = which("lli")
         if lli is None:
             print("Skipping LLVM execution test: lli is missing from PATH")
             sys.exit(77)
-        if sys.argv[2:] == ["--run-loops"]:
+        lli_command = [lli, f"--dlopen={runtime}"]
+        if mode == "--run-loops":
             finite, repeated, nested = program_template("llvm/while_statement").split("\n\n\n")
-            check_print_program(sys.argv[1], lli, finite, "7\n8\n9\n")
-            check_loop_prefix(sys.argv[1], lli, repeated, [1, 2] * 4)
-            check_loop_prefix(sys.argv[1], lli, nested, [1, 2, 2, 2, 2])
+            check_print_program(executable, lli_command, finite, "7\n8\n9\n")
+            check_loop_prefix(executable, lli_command, repeated, [1, 2] * 4)
+            check_loop_prefix(executable, lli_command, nested, [1, 2, 2, 2, 2])
             sys.exit(0)
-        check_print_program(sys.argv[1], lli, llvm_expressions(), EXPRESSION_OUTPUT)
-        check_print(sys.argv[1], lli, "if_statement", "1\n2\n3\n4\n5\n")
+        assert mode == "--run-print", mode
+        check_print_program(executable, lli_command, llvm_expressions(), EXPRESSION_OUTPUT)
+        check_print_program(executable, lli_command, program_template("llvm/if_statement"), "1\n2\n3\n4\n5\n")
+        input_program = "@Output @Input @Plus 1 @StatementEnd"
+        check_print_program(executable, lli_command, input_program, "42\n", "41\n")
+        for stdin in ("", "abc\n", "2147483648\n", "-2147483649\n"):
+            check_print_program(executable, lli_command, input_program, "", stdin, input_error=True)
+        check_print_program(executable, lli_command,
+                            "@Output 0 @LogicalAnd @Input @StatementEnd\n"
+                            "@Output 1 @LogicalOr @Input @StatementEnd", "0\n1\n")
     else:
         main(sys.argv[1])
