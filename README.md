@@ -91,7 +91,7 @@ The recursive-descent parser consumes the token sequence and builds the AST. Eac
 
 ### AST execution
 
-Implementation: [frontend/include/ast.hpp](frontend/include/ast.hpp), [frontend/source/ast.cpp](frontend/source/ast.cpp).
+Implementation: [ast/include/ast.hpp](ast/include/ast.hpp), [ast/source/ast.cpp](ast/source/ast.cpp).
 
 The interpreter walks the tree. Expressions evaluate to an `int`, while statements perform actions.
 
@@ -126,6 +126,11 @@ The end-to-end tests launch the executable with a source file and input data, th
 ├── .gitignore
 ├── CMakeLists.txt                # Core library, CLI, and test configuration
 ├── README.md
+├── ast/
+│   ├── include/
+│   │   └── ast.hpp               # Expression and statement nodes
+│   └── source/
+│       └── ast.cpp
 ├── cmake/
 │   └── warnings.cmake            # Compiler warning options
 ├── docs/
@@ -135,14 +140,12 @@ The end-to-end tests launch the executable with a source file and input data, th
 │   └── fibonacci.paracl
 ├── frontend/
 │   ├── include/
-│   │   ├── ast.hpp               # Expression and statement nodes
 │   │   ├── input.hpp
 │   │   ├── lexer.hpp
 │   │   ├── parser.hpp
 │   │   ├── token.hpp             # Token kinds and source positions
 │   │   └── token_spellings.hpp   # Keywords, operators, and delimiters
 │   └── source/
-│       ├── ast.cpp
 │       ├── input.cpp             # Source file reader
 │       ├── lexer.cpp
 │       ├── parser.cpp

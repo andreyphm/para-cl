@@ -11,12 +11,12 @@ include(CTest)
 include(cmake/warnings.cmake)
 
 add_library(para_cl_core STATIC
-    frontend/source/ast.cpp
+    ast/source/ast.cpp
     frontend/source/token.cpp
     frontend/source/lexer.cpp
     frontend/source/parser.cpp
     interpreter/source/runtime_context.cpp)
-target_include_directories(para_cl_core PUBLIC frontend/include interpreter/include)
+target_include_directories(para_cl_core PUBLIC ast/include frontend/include interpreter/include)
 para_cl_enable_warnings(para_cl_core)
 
 if(BUILD_TESTING)
